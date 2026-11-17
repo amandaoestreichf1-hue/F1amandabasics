@@ -4,15 +4,33 @@ import { fontCss, fontTracking } from './fonts.js';
 import { ease, clamp } from './easing.js';
 
 // Global look knobs (set by the renderer every frame)
-export const STYLE = { tear: 1 };
+// look: 'soft' (her lilac, handwritten language) | 'collage' (newspaper cut-outs)
+export const STYLE = { tear: 1, look: 'soft' };
+const soft = () => STYLE.look === 'soft';
 
-// Shadow fill: hard ("sombra seca") when blur = 0, soft & dreamy when blur > 0
+// Hard shadow ("sombra seca"): an offset copy of the shape
 function shadowFill(ctx, shadow) {
-  if (shadow.blur) ctx.filter = `blur(${shadow.blur}px)`;
   ctx.fillStyle = shadow.color;
   ctx.fill();
-  ctx.filter = 'none';
 }
+
+// Soft shadow: the canvas's native shadow (device-space, so it follows any rotation/scale correctly).
+// Use around the first opaque draw of an element.
+export function applyShadow(ctx, shadow) {
+  const m = ctx.getTransform();
+  const sc = Math.hypot(m.a, m.b) || 1;
+  ctx.shadowColor = shadow.color;
+  ctx.shadowBlur = (shadow.blur || 0) * sc;
+  ctx.shadowOffsetX = shadow.dx * sc;
+  ctx.shadowOffsetY = shadow.dy * sc;
+}
+export function clearShadow(ctx) {
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+}
+export const isSoftShadow = (shadow) => !!shadow && shadow.blur > 0;
 
 // ---------------------------------------------------------------------------
 // Textures (generated once, lazily)
@@ -177,9 +195,16 @@ export function tornRectPath(ctx, w, h, { seed = 1, amp = 10, step = 18, torn = 
 export function paperPiece(ctx, opts, inner) {
   const {
     x, y, w, h, rot = 0, color = '#f2ede2', seed = 1, torn, step = 18,
-    texture = 'grain', shadow = null, fiber = '#fbf9f3', textureAlpha = 1, newsSeed = 3, alpha = 1, scale = 1,
+    shadow = null, textureAlpha = 1, newsSeed = 3, alpha = 1, scale = 1,
   } = opts;
-  const amp = opts.amp === undefined ? 9 * STYLE.tear : opts.amp * STYLE.tear;
+  let texture = opts.texture ?? 'grain';
+  let fiber = opts.fiber === undefined ? '#fbf9f3' : opts.fiber;
+  const tear = soft() ? Math.min(STYLE.tear, 0.18) : STYLE.tear;
+  const amp = opts.amp === undefined ? 9 * tear : opts.amp * tear;
+  if (soft()) {
+    if (texture === 'news') texture = 'graph';
+    fiber = null;
+  }
   if (alpha <= 0 || scale <= 0) return;
   ctx.save();
   ctx.globalAlpha *= alpha;
@@ -189,7 +214,8 @@ export function paperPiece(ctx, opts, inner) {
   ctx.translate(-w / 2, -h / 2);
   const shapeOpts = { seed, amp, step, torn };
 
-  if (shadow) {
+  const softSh = isSoftShadow(shadow);
+  if (shadow && !softSh) {
     ctx.save();
     ctx.translate(shadow.dx, shadow.dy);
     tornRectPath(ctx, w, h, { ...shapeOpts, expand: fiber ? 4 : 0 });
@@ -199,11 +225,15 @@ export function paperPiece(ctx, opts, inner) {
   if (fiber) {
     tornRectPath(ctx, w, h, { ...shapeOpts, seed: seed + 17, expand: 4 });
     ctx.fillStyle = fiber;
+    if (softSh) applyShadow(ctx, shadow);
     ctx.fill();
+    clearShadow(ctx);
   }
   tornRectPath(ctx, w, h, shapeOpts);
   ctx.fillStyle = color;
+  if (softSh && !fiber) applyShadow(ctx, shadow);
   ctx.fill();
+  clearShadow(ctx);
   ctx.save();
   ctx.clip();
   drawTexture(ctx, texture, w, h, seed, textureAlpha, newsSeed);
@@ -223,7 +253,7 @@ export function drawTexture(ctx, texture, w, h, seed, a = 1, newsSeed = 3) {
     const ox = -r() * Math.max(0, tex.width - w), oy = -r() * Math.max(0, tex.height - h);
     for (let yy = oy; yy < h; yy += tex.height) for (let xx = ox; xx < w; xx += tex.width) ctx.drawImage(tex, xx, yy);
   } else if (texture === 'graph') {
-    ctx.globalAlpha *= a;
+    ctx.globalAlpha *= a * (w * h < 600000 ? 0.7 : 1);
     graphLines(ctx, w, h);
     const cr = crumpleTexture();
     const r = rng(seed + 9);
@@ -543,6 +573,7 @@ function stampCanvas({ text, sub, color, shape, fontId }) {
 
 export function stamp(ctx, { x, y, text, sub = '', color = '#7a1fa2', width = 420, rot = -0.12, shape = 'rect', fontId = 'Anton', progress = 1, alpha = 0.92 }) {
   if (progress <= 0 || !text) return;
+  if (soft()) return softSticker(ctx, { x, y, text, sub, color, width, rot, shape, progress });
   const c = stampCanvas({ text, sub, color, shape, fontId });
   const s = width / c.width;
   const p = ease.slam(progress);
@@ -554,6 +585,49 @@ export function stamp(ctx, { x, y, text, sub = '', color = '#7a1fa2', width = 42
   ctx.scale(sc, sc);
   ctx.globalCompositeOperation = 'source-over';
   ctx.drawImage(c, -c.width / 2, -c.height / 2);
+  ctx.restore();
+}
+
+// Soft look: a clean pill / round sticker that pops in (instead of a grungy rubber stamp)
+function softSticker(ctx, { x, y, text, sub, color, width, rot, shape, progress }) {
+  const k = ease.outBack(clamp(progress * 1.6), 2.2);
+  if (k <= 0) return;
+  const round = shape === 'circle';
+  const size = round ? width * 0.2 : width * 0.17;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rot * 0.6 + (1 - Math.min(1, k)) * 0.4);
+  ctx.scale(k, k);
+  ctx.font = fontCss('Hand', size);
+  if ('letterSpacing' in ctx) ctx.letterSpacing = `${size * 0.06}px`;
+  const tw = ctx.measureText(text).width;
+  const subSize = size * 0.42;
+  const w = round ? Math.max(tw + size * 0.8, width * 0.62) : tw + size * 1.2;
+  const h = round ? w : size * (sub ? 1.9 : 1.45);
+  ctx.shadowColor = 'rgba(60,40,100,0.25)';
+  ctx.shadowBlur = 16;
+  ctx.shadowOffsetY = 6;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  if (round) ctx.arc(0, 0, w / 2 + 8, 0, Math.PI * 2);
+  else roundRect(ctx, -w / 2 - 8, -h / 2 - 8, w + 16, h + 16, h / 2 + 8);
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  if (round) ctx.arc(0, 0, w / 2, 0, Math.PI * 2);
+  else roundRect(ctx, -w / 2, -h / 2, w, h, h / 2);
+  ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, 0, sub ? -subSize * 0.55 : size * 0.04);
+  if (sub) {
+    ctx.font = fontCss('Hand', subSize);
+    if ('letterSpacing' in ctx) ctx.letterSpacing = `${subSize * 0.12}px`;
+    ctx.fillText(sub, 0, size * 0.55);
+  }
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
   ctx.restore();
 }
 
@@ -595,7 +669,7 @@ export function drawImageContain(ctx, img, cx, cy, maxW, maxH, rot = 0) {
 
 const _ph = new Map();
 function photoPlaceholder(ctx, w, h, ink) {
-  const key = `${Math.round(w)}x${Math.round(h)}|${ink}`;
+  const key = `${Math.round(w)}x${Math.round(h)}|${ink}|${STYLE.look}`;
   let c = _ph.get(key);
   if (!c) {
     c = document.createElement('canvas');
@@ -608,6 +682,23 @@ function photoPlaceholder(ctx, w, h, ink) {
 }
 
 function drawPlaceholder(ctx, w, h, ink) {
+  if (soft()) {
+    ctx.save();
+    ctx.fillStyle = '#e4ddef';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = '#b3a6d6';
+    ctx.lineWidth = 4;
+    ctx.setLineDash([16, 12]);
+    ctx.strokeRect(14, 14, w - 28, h - 28);
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#7d6fa6';
+    ctx.font = fontCss('Hand', Math.max(24, w * 0.075));
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('sua foto aqui', w / 2, h / 2);
+    ctx.restore();
+    return;
+  }
   ctx.save();
   ctx.fillStyle = '#cfc8b8';
   ctx.fillRect(0, 0, w, h);
@@ -640,12 +731,7 @@ export function photoSlot(ctx, img, { x, y, w, h, rot = 0, frame = 'polaroid', s
     // Transparent PNG straight on the collage, with sticker-ish hard shadow.
     if (img) {
       ctx.save();
-      if (shadow) {
-        ctx.shadowColor = shadow.color;
-        ctx.shadowOffsetX = shadow.dx;
-        ctx.shadowOffsetY = shadow.dy;
-        ctx.shadowBlur = shadow.blur || 0;
-      }
+      if (shadow) applyShadow(ctx, shadow);
       ctx.translate(-w / 2, -h / 2);
       const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
       const s = Math.min(w / iw, h / ih) * zoom;
@@ -674,14 +760,21 @@ export function photoSlot(ctx, img, { x, y, w, h, rot = 0, frame = 'polaroid', s
     const pad = w * 0.06, bottom = w * 0.22;
     const fw = w + pad * 2, fh = h + pad + bottom;
     ctx.translate(-fw / 2, -fh / 2);
-    if (shadow) {
+    if (shadow && !isSoftShadow(shadow)) {
       ctx.beginPath();
       ctx.rect(shadow.dx, shadow.dy, fw, fh);
       shadowFill(ctx, shadow);
     }
     ctx.fillStyle = paper;
+    if (isSoftShadow(shadow)) applyShadow(ctx, shadow);
     ctx.fillRect(0, 0, fw, fh);
+    clearShadow(ctx);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, fw, fh);
+    ctx.clip();
     drawTexture(ctx, 'grain', fw, fh, seed, 0.6);
+    ctx.restore();
     ctx.save();
     ctx.beginPath();
     ctx.rect(pad, pad, w, h);
@@ -708,7 +801,7 @@ export function photoSlot(ctx, img, { x, y, w, h, rot = 0, frame = 'polaroid', s
     // torn-out magazine photo
     ctx.translate(-w / 2, -h / 2);
     const shapeOpts = { seed, amp: 9 * STYLE.tear, step: 16 };
-    if (shadow) {
+    if (shadow && !isSoftShadow(shadow)) {
       ctx.save();
       ctx.translate(shadow.dx, shadow.dy);
       tornRectPath(ctx, w, h, { ...shapeOpts, expand: 4 });
@@ -717,7 +810,9 @@ export function photoSlot(ctx, img, { x, y, w, h, rot = 0, frame = 'polaroid', s
     }
     tornRectPath(ctx, w, h, { ...shapeOpts, seed: seed + 17, expand: 5 });
     ctx.fillStyle = '#fbf9f3';
+    if (isSoftShadow(shadow)) applyShadow(ctx, shadow);
     ctx.fill();
+    clearShadow(ctx);
     tornRectPath(ctx, w, h, shapeOpts);
     ctx.save();
     ctx.clip();
@@ -790,8 +885,36 @@ export function wrapLines(ctx, text, maxWidth) {
  * Ransom-note / cut-out letters. Each glyph on its own scrap of paper.
  * appear: 0..1 staggered pop-in.
  */
-export function ransomText(ctx, text, { x, y, size = 150, maxWidth = 900, fonts = ['Anton'], schemes, seed = 1, appear = 1, shadow, boil = 0 }) {
+export function ransomText(ctx, text, { x, y, size = 150, maxWidth = 900, fonts = ['Anton'], schemes, seed = 1, appear = 1, shadow, boil = 0, softColor = '#2f2a36' }) {
   if (!text) return;
+  if (soft()) {
+    const chars = [...text.toUpperCase()];
+    const s = fitFont(ctx, text.toUpperCase(), fonts[0], size, maxWidth);
+    ctx.save();
+    ctx.font = fontCss(fonts[0], s);
+    if ('letterSpacing' in ctx) ctx.letterSpacing = `${fontTracking(fonts[0]) * s}px`;
+    const widths = chars.map((c) => ctx.measureText(c).width);
+    const total = widths.reduce((a, b) => a + b, 0);
+    let cx = x - total / 2;
+    ctx.fillStyle = softColor;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    chars.forEach((c, i) => {
+      const k = clamp(appear * (chars.length + 4) - i);
+      if (k > 0 && c !== ' ') {
+        const sc = ease.outBack(Math.min(1, k), 2.4);
+        ctx.save();
+        ctx.translate(cx + widths[i] / 2, y + (1 - Math.min(1, k)) * s * 0.2);
+        ctx.scale(sc, sc);
+        ctx.fillText(c, 0, 0);
+        ctx.restore();
+      }
+      cx += widths[i];
+    });
+    if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+    ctx.restore();
+    return;
+  }
   const chars = [...text.toUpperCase()];
   const r = rng(seed);
   const items = chars.map((ch) => {

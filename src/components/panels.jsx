@@ -306,6 +306,20 @@ export function MotionPanel({ state, setState, tpl }) {
           <Btn key={d} className="flex-1 !py-1 font-mono" onClick={() => setState({ duration: d })}>{d}s</Btn>
         ))}
       </div>
+      <Label>Visual</Label>
+      <Segmented value={state.look || 'soft'} onChange={(v) => setState({ look: v })} options={[['soft', '✿ Delicado (seu)'], ['collage', 'Colagem de jornal']]} />
+      {!isTransition(tpl) && (
+        <>
+          <Select
+            label="Enquanto está na tela"
+            value={state.idle || 'push'}
+            onChange={(v) => setState({ idle: v })}
+            options={[['push', 'Zoom lento (respiro)'], ['float', 'Flutuar de leve'], ['none', 'Parado']]}
+          />
+          <Toggle label="Terminar parado (sem animação de saída)" value={!!state.holdEnd} onChange={(v) => setState({ holdEnd: v })} />
+          {state.holdEnd && <div className="text-[11px] text-stone-500 -mt-1">Bom para cortar no CapCut exatamente onde você quiser.</div>}
+        </>
+      )}
       <Slider label="Papel rasgado (intensidade)" value={state.tear ?? 1} min={0} max={1.6} step={0.05} fmt={(v) => Math.round(v * 100) + '%'} onChange={(v) => setState({ tear: v })} />
       <Toggle label="Sombra" value={state.shadow.on} onChange={(v) => setState({ shadow: { ...state.shadow, on: v } })} />
       {state.shadow.on && (

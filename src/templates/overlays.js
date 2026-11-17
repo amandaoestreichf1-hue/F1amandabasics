@@ -10,6 +10,11 @@ export const errata = {
   desc: 'Bloco de notas preso com fita crepe: texto riscado + correção datilografada.',
   category: 'overlay',
   defaultDuration: 2.8,
+  cues: (P, dur) => [
+    { t: 0, s: 'whoosh', label: 'papel entra' },
+    { t: 0.24, s: 'pop', label: 'cabeçalho' },
+    { t: 0.55, s: 'typing', d: Math.min(dur - 0.9, String(P.body || '').length * 0.022), label: 'correção' },
+  ],
   fields: [
     { key: 'header', label: 'Cabeçalho', type: 'text', default: 'ERRATA', suggestions: ['ERRATA', 'CORRIGINDO...', 'TEAM RADIO', 'NOTA DA EDITORA', 'ATUALIZAÇÃO'] },
     { key: 'wrong', label: 'Texto errado (riscado)', type: 'text', default: 'Hamilton terminou P5' },
@@ -120,13 +125,17 @@ export const lowerThird = {
   desc: 'Faixa de papel rasgado rápida para apresentar o assunto do vídeo.',
   category: 'overlay',
   defaultDuration: 2.4,
+  cues: () => [
+    { t: 0, s: 'whoosh', label: 'faixa entra' },
+    { t: 0.2, s: 'pop', label: 'etiqueta' },
+  ],
   fields: [
     { key: 'tag', label: 'Etiqueta', type: 'text', default: 'PAUTA DO DIA' },
     { key: 'title', label: 'Manchete', type: 'text', default: 'O CAOS EM INTERLAGOS' },
     { key: 'sub', label: 'Linha de apoio', type: 'text', default: 'GP de São Paulo · Volta 42 · Safety Car' },
     { key: 'style', label: 'Cor da faixa', type: 'select', options: [['accent', 'Cor principal da equipe'], ['paper2', 'Cor secundária'], ['news', 'Jornal'], ['ink', 'Carvão']], default: 'accent' },
     { key: 'side', label: 'Entrar pela', type: 'select', options: [['left', 'Esquerda'], ['right', 'Direita']], default: 'left' },
-    { key: 'posY', label: 'Posição vertical', type: 'range', min: 0.1, max: 0.9, step: 0.01, default: 0.72 },
+    { key: 'posY', label: 'Posição vertical', type: 'range', min: 0.1, max: 0.9, step: 0.01, default: 0.64 },
     { key: 'scale', label: 'Escala', type: 'range', min: 0.6, max: 1.2, step: 0.01, default: 1 },
   ],
   render(rc) {
@@ -208,6 +217,12 @@ export const ticker = {
   desc: 'Ticker de jornal mostrando evolução na corrida: P12 ➔ P4 ou P2 ➔ DNF.',
   category: 'overlay',
   defaultDuration: 2.4,
+  cues: () => [
+    { t: 0, s: 'whoosh', label: 'placar entra' },
+    { t: 0.2, s: 'pop', label: 'posição inicial' },
+    { t: 0.42, s: 'pop', label: 'posição final' },
+    { t: 0.75, s: 'pop', label: 'saldo' },
+  ],
   fields: [
     { key: 'label', label: 'Rótulo', type: 'text', default: 'GANHO DE POSIÇÃO' },
     { key: 'driver', label: 'Piloto / sigla', type: 'text', default: 'NORRIS' },

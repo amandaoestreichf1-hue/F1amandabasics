@@ -4,12 +4,12 @@ import Preview from './components/Preview.jsx';
 import Library from './components/Library.jsx';
 import { useLibrary } from './lib/useLibrary.js';
 import { TemplatePicker, TeamPanel, TypePanel, FieldsPanel, TrinketPanel, MotionPanel } from './components/panels.jsx';
-import { Section, Btn, Segmented, Label } from './components/ui.jsx';
-import { TEMPLATES, templateById, allDefaultParams, defaultParams } from './templates/index.js';
+import { Section, Btn, Segmented, Label, Toggle } from './components/ui.jsx';
+import { TEMPLATES, templateById, allDefaultParams, defaultParams, cuesText } from './templates/index.js';
 import { teamById } from './lib/teams.js';
 import { ensureBuiltinFonts } from './lib/fonts.js';
 import { buildNativeTrinkets } from './lib/nativeTrinkets.js';
-import { exportWebM, exportPNGZip, exportStillPNG, download, webmAlphaSupported } from './lib/exporter.js';
+import { exportWebM, exportPNGZip, exportStillPNG, exportChroma, download, webmAlphaSupported } from './lib/exporter.js';
 
 const STORAGE_KEY = 'paddock-press-v2';
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -21,6 +21,9 @@ function initialState() {
     palette: { ...teamById('lilas').palette },
     soft: 0,
     tear: 0.7,
+    look: 'soft',
+    idle: 'push',
+    holdEnd: false,
     fonts: { head: 'Hand', body: 'PlayfairItalic', accent: 'Script' },
     motion: 'fluid',
     view: 'editor',
@@ -335,12 +338,15 @@ function Header({ view, setView, libCount }) {
 function ExportPanel({ state, assets, fps, setFps, notify, timeRef }) {
   const [busy, setBusy] = useState(null); // {kind, p}
   const [alphaOk, setAlphaOk] = useState(null);
+  const [keyColor, setKeyColor] = useState('#00ff00');
+  const [keepShadow, setKeepShadow] = useState(false);
+  const [more, setMore] = useState(false);
   const abortRef = useRef(null);
   useEffect(() => {
     webmAlphaSupported().then(setAlphaOk);
   }, []);
   const tpl = templateById(state.templateId);
-  const base = `${tpl.id}_${state.teamId}_${state.duration.toFixed(1)}s`;
+  const base = `${tpl.id}_${state.duration.toFixed(1)}s`;
   const frames = Math.round(state.duration * fps);
 
   const run = async (kind) => {
@@ -349,12 +355,17 @@ function ExportPanel({ state, assets, fps, setFps, notify, timeRef }) {
     setBusy({ kind, p: 0 });
     const onProgress = (p) => setBusy({ kind, p });
     try {
-      if (kind === 'webm') {
+      if (kind === 'chroma') {
+        const { blob, ext } = await exportChroma(state, assets, { fps, key: keyColor, keepShadow, onProgress, signal: ac.signal });
+        if (await download(blob, `${base}_${fps}fps_${keyColor === '#00ff00' ? 'verde' : 'azul'}.${ext}`)) notify(`Vídeo com fundo ${keyColor === '#00ff00' ? 'verde' : 'azul'} exportado (${(blob.size / 1e6).toFixed(1)} MB) ✓`);
+      } else if (kind === 'webm') {
         const blob = await exportWebM(state, assets, { fps, onProgress, signal: ac.signal });
         if (await download(blob, `${base}_${fps}fps_alpha.webm`)) notify(`WebM exportado (${(blob.size / 1e6).toFixed(1)} MB) ✓`);
       } else if (kind === 'png') {
-        const blob = await exportPNGZip(state, assets, { fps, onProgress, signal: ac.signal, baseName: base });
+        const blob = await exportPNGZip(state, assets, { fps, onProgress, signal: ac.signal, baseName: base, extraText: cuesText(state, fps) });
         if (await download(blob, `${base}_${fps}fps_png.zip`)) notify(`ZIP com ${frames} PNGs exportado ✓`);
+      } else if (kind === 'cues') {
+        if (await download(new Blob([cuesText(state, fps)], { type: 'text/plain' }), `${base}_marcas-de-som.txt`)) notify('Marcas de som exportadas ✓');
       } else {
         const blob = await exportStillPNG(state, assets, Math.min(timeRef.current, state.duration));
         if (await download(blob, `${base}_quadro.png`)) notify('Quadro PNG exportado ✓');
@@ -369,17 +380,42 @@ function ExportPanel({ state, assets, fps, setFps, notify, timeRef }) {
       setBusy(null);
     }
   };
+  const busyName = { chroma: 'vídeo com fundo de cor', webm: 'WebM', png: 'PNGs', still: 'PNG', cues: 'marcas' };
 
   return (
-    <Section title="Exportar com transparência" kicker="07">
+    <Section title="Exportar" kicker="07">
       <Label>Quadros por segundo do arquivo</Label>
       <Segmented value={String(fps)} onChange={(v) => setFps(parseInt(v, 10))} options={[['30', '30 fps'], ['60', '60 fps']]} />
       <div className="font-mono text-[11px] text-stone-500">1080×1920 · {frames} quadros · {state.duration.toFixed(2)}s</div>
-      <div className="grid grid-cols-1 gap-2">
-        <Btn variant="primary" disabled={!!busy} onClick={() => run('webm')}>⬇ Vídeo .webm (VP9 + Alpha)</Btn>
-        <Btn variant="paper" disabled={!!busy} onClick={() => run('png')}>⬇ Sequência PNG transparente (.zip)</Btn>
-        <Btn disabled={!!busy} onClick={() => run('still')}>⬇ Só o quadro atual (.png)</Btn>
+
+      <div className="rounded-md border border-[#c0b4fc]/40 bg-[#c0b4fc]/5 p-3 space-y-2">
+        <div className="text-[12px] text-newsprint font-semibold">📱 Para o CapCut no celular / iPad</div>
+        <Segmented value={keyColor} onChange={setKeyColor} options={[['#00ff00', '🟩 Fundo verde'], ['#0047ff', '🟦 Fundo azul']]} />
+        <Toggle label="Manter sombras (pode deixar borda no recorte)" value={keepShadow} onChange={setKeepShadow} />
+        <Btn variant="primary" className="w-full" disabled={!!busy} onClick={() => run('chroma')}>⬇ Vídeo .mp4 com fundo de cor</Btn>
+        <div className="text-[11px] text-stone-400 leading-relaxed">
+          No CapCut: coloque o vídeo por cima do seu, toque em <b>Recortar → Chroma key</b>, escolha a cor do fundo e suba a <b>intensidade</b> até sumir.
+          Use o azul se a animação tiver verde (pneu intermediário, saldo positivo).
+        </div>
       </div>
+
+      <Btn className="w-full" disabled={!!busy} onClick={() => run('cues')}>⬇ Marcas de som (.txt) · 💨 🫧 ⌨️</Btn>
+
+      <button className="text-[12px] text-stone-400 hover:text-stone-200 text-left" onClick={() => setMore((m) => !m)}>
+        {more ? '▾' : '▸'} Com transparência real (CapCut no computador)
+      </button>
+      {more && (
+        <div className="grid grid-cols-1 gap-2">
+          <Btn variant="paper" disabled={!!busy} onClick={() => run('webm')}>⬇ Vídeo .webm (VP9 + Alpha)</Btn>
+          <Btn disabled={!!busy} onClick={() => run('png')}>⬇ Sequência PNG transparente (.zip)</Btn>
+          <Btn disabled={!!busy} onClick={() => run('still')}>⬇ Só o quadro atual (.png)</Btn>
+          <div className={`text-[11px] leading-relaxed rounded-md p-2.5 border ${alphaOk === false ? 'border-amber-500/40 text-amber-200/90 bg-amber-500/5' : 'border-desk-700 text-stone-400 bg-desk-850'}`}>
+            {alphaOk === null && 'Verificando suporte a VP9 com alfa…'}
+            {alphaOk === true && <>✓ Seu navegador codifica VP9 com canal alfa quadro a quadro.</>}
+            {alphaOk === false && <>⚠ Aqui o WebM com alfa é gravado em tempo real. Para máxima compatibilidade use a sequência PNG.</>}
+          </div>
+        </div>
+      )}
       <AnimatePresence>
         {busy && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-1.5">
@@ -387,20 +423,12 @@ function ExportPanel({ state, assets, fps, setFps, notify, timeRef }) {
               <motion.div className="h-full bg-marker" animate={{ width: `${Math.round(busy.p * 100)}%` }} transition={{ duration: 0.1 }} />
             </div>
             <div className="flex items-center justify-between font-mono text-[11px] text-stone-400">
-              <span>Renderizando {busy.kind === 'webm' ? 'WebM' : busy.kind === 'png' ? 'PNGs' : 'PNG'}… {Math.round(busy.p * 100)}%</span>
+              <span>Renderizando {busyName[busy.kind]}… {Math.round(busy.p * 100)}%</span>
               <button className="text-marker hover:underline" onClick={() => abortRef.current?.abort()}>cancelar</button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-      <div className={`text-[11px] leading-relaxed rounded-md p-2.5 border ${alphaOk === false ? 'border-amber-500/40 text-amber-200/90 bg-amber-500/5' : 'border-desk-700 text-stone-400 bg-desk-850'}`}>
-        {alphaOk === null && 'Verificando suporte a VP9 com alfa…'}
-        {alphaOk === true && <>✓ Seu navegador codifica <b>VP9 com canal alfa</b> quadro a quadro (exportação mais rápida que tempo real e sem quadros perdidos).</>}
-        {alphaOk === false && <>⚠ Codificação VP9+alfa direta indisponível aqui — o WebM será gravado em tempo real (MediaRecorder). Para máxima compatibilidade use o <b>Chrome/Edge</b> no computador ou a <b>sequência PNG</b>.</>}
-        <div className="mt-1.5 text-stone-500">
-          CapCut: o <b>.webm</b> funciona bem no CapCut para computador. No celular, se a transparência não aparecer, use a <b>sequência PNG</b> (ou converta o PNG/WebM para .mov com alfa no computador).
-        </div>
-      </div>
     </Section>
   );
 }

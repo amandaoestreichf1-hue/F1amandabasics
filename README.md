@@ -77,8 +77,18 @@ Na aba **✿ Meu acervo** você sobe suas imagens e fontes. Elas ficam salvas no
 - **Animação contínua:** todo trinket tem entrada (pop, carimbo, cai, gira) e movimento enquanto está na tela (flutuar, balançar, pulsar, girar).
 - **Backup:** baixe o acervo em .zip para guardar no Drive ou levar para outro computador, e restaure por lá.
 
+## Ritmo, preview e som
+
+- **Visual:** "✿ Delicado", o padrão, usa a linguagem lilás: letra de mão, papel quadriculado e adesivos limpos no lugar de carimbos. "Colagem de jornal" é o estilo antigo.
+- **Enquanto está na tela:** zoom lento (respiro), flutuar ou parado, para os cards e overlays não congelarem depois da entrada.
+- **Terminar parado:** tira a animação de saída para você cortar onde quiser no CapCut.
+- **📱 Zona segura:** mostra no preview o que a interface do Reels/TikTok cobre.
+- **🎬 Testar com meu vídeo:** coloca o seu vídeo, com som, atrás da animação, sincronizado com o play e com um ajuste de início.
+- **Marcas de som:** a timeline mostra 💨 whoosh, 🫧 pop e ⌨️ typing de cada animação, e dá para exportar a lista em .txt com o tempo e o número do quadro.
+
 ## Exportação
 
+- **`.mp4` com fundo verde ou azul (chroma key).** É o recomendado para o CapCut no celular e no iPad: Recortar → Chroma key.
 - **`.webm` VP9 + Alpha.** Usa WebCodecs quadro a quadro quando o navegador suporta codificar alfa. Se não suportar, grava com MediaRecorder em tempo real (o alfa continua no arquivo).
 - **Sequência PNG (`.zip`).** Garante transparência em qualquer editor.
 - **Quadro atual em PNG.**

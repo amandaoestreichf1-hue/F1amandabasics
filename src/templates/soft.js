@@ -128,6 +128,11 @@ export const checkerWipe = {
   category: 'transition',
   defaultDuration: 1.0,
   cutPoint: 0.5,
+  cues: (P, dur) => [
+    { t: 0, s: 'whoosh', label: 'quadradinhos cobrem' },
+    ...(P.text ? [{ t: dur * 0.3, s: 'typing', d: 0.3, label: 'texto' }] : []),
+    { t: dur * 0.53, s: 'whoosh', label: 'abre' },
+  ],
   fields: [
     { key: 'size', label: 'Tamanho dos quadrados', type: 'range', min: 90, max: 270, step: 5, default: 150 },
     { key: 'order', label: 'Ordem', type: 'select', options: [['diagonal', 'Diagonal'], ['center', 'Do centro pra fora'], ['rows', 'De cima pra baixo'], ['random', 'Aleatória (confete)']], default: 'diagonal' },
@@ -198,6 +203,15 @@ export const disclaimer = {
   desc: 'Título circulado à mão + texto em letra de mão surgindo palavra por palavra.',
   category: 'overlay',
   defaultDuration: 3.2,
+  cues: (P) => {
+    const t0 = P.bg !== 'none' && P.bgEnter !== 'cut' ? 0.25 : 0.08;
+    const words = String(P.text || '').split(/\s+/).filter(Boolean).length;
+    return [
+      ...(P.bg !== 'none' ? [{ t: 0, s: 'whoosh', label: 'fundo' }] : []),
+      { t: t0, s: 'pop', label: 'título' },
+      { t: t0 + 0.55, s: 'typing', d: words * 0.12, label: 'texto' },
+    ];
+  },
   fields: [
     { key: 'title', label: 'Título', type: 'text', default: 'DISCLAIMER:', suggestions: ['DISCLAIMER:', 'NÃO CONFIRMADAS:', 'ATENÇÃO:', 'SPOILER:', 'CONTEXTO:'] },
     { key: 'text', label: 'Texto', type: 'textarea', default: 'FALTAM APENAS 6 CORRIDAS PARA O FIM DA TEMPORADA' },
@@ -243,6 +257,22 @@ export const pointsCompare = {
   desc: 'Cabeças recortadas + "340 PTS" ou "PRECISA GANHAR TUDO", com seta lilás e diferença.',
   category: 'overlay',
   defaultDuration: 3.4,
+  cues: (P) => {
+    const t0 = P.bg !== 'none' && P.bgEnter !== 'cut' ? 0.25 : 0.05;
+    const w1 = String(P.v1 || '').split(/\s+/).length;
+    const start2 = t0 + 0.55 + w1 * 0.1;
+    const out = [
+      ...(P.bg !== 'none' ? [{ t: 0, s: 'whoosh', label: 'fundo' }] : []),
+      { t: t0, s: 'pop', label: 'cabecinha 1' },
+      { t: t0 + 0.25, s: 'typing', d: w1 * 0.1, label: 'texto 1' },
+    ];
+    if (P.rows === '2') {
+      out.push({ t: start2, s: 'pop', label: 'cabecinha 2' });
+      out.push({ t: start2 + 0.25, s: 'typing', d: String(P.v2 || '').split(/\s+/).length * 0.1, label: 'texto 2' });
+      if (P.arrow) out.push({ t: start2 + 0.5, s: 'whoosh', label: 'seta' });
+    }
+    return out;
+  },
   fields: [
     { key: 'photo1', label: 'Cabecinha 1 (PNG recortado)', type: 'image', defaultFrame: 'cutout' },
     { key: 'v1', label: 'Texto 1', type: 'textarea', default: '340 PTS' },

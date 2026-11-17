@@ -15,6 +15,10 @@ export const carWipe = {
   category: 'transition',
   defaultDuration: 0.9,
   cutPoint: 0.55,
+  cues: (P, dur) => [
+    { t: 0.05, s: 'whoosh', label: 'carro cruzando' },
+    ...(P.cover ? [{ t: dur * 0.58, s: 'whoosh', label: 'papel abre' }] : []),
+  ],
   fields: [
     { key: 'carMode', label: 'Objeto', type: 'select', options: [['native', 'Carrinho ilustrado (cor da equipe)'], ['png', 'Meu PNG (carro, capacete, objeto)']], default: 'native' },
     { key: 'carPng', label: 'PNG que cruza a tela', type: 'image', frames: false, libCategory: 'object', showIf: (P) => P.carMode === 'png' },
@@ -153,6 +157,12 @@ export const startLights = {
   category: 'transition',
   defaultDuration: 1.2,
   cutPoint: 0.78,
+  cues: (P, dur) => [
+    { t: 0.02, s: 'whoosh', label: 'fundo entra' },
+    ...[0.18, 0.28, 0.38, 0.48, 0.58].map((k, i) => ({ t: dur * k, s: 'pop', label: `luz ${i + 1}` })),
+    { t: dur * 0.7, s: 'whoosh', label: 'lights out' },
+    { t: dur * 0.84, s: 'whoosh', label: 'abre' },
+  ],
   fields: [
     { key: 'cover', label: 'Fundo de papel cobrindo a tela', type: 'toggle', default: true },
     { key: 'bg', label: 'Fundo', type: 'select', options: [['news', 'Jornal'], ['team', 'Cor da equipe'], ['dark', 'Carvão']], default: 'news' },

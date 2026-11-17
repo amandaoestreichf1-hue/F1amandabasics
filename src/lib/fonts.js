@@ -18,7 +18,7 @@ export function allFonts() {
 }
 
 export function fontTracking(id) {
-  return fontById(id).tracking || 0;
+  return fontById(FONT_REMAP[id] || id).tracking || 0;
 }
 
 export function fontById(id) {
@@ -26,8 +26,11 @@ export function fontById(id) {
 }
 
 // CSS font shorthand for canvas
+// Look-dependent font swaps (the soft look trades the typewriter for handwriting)
+export const FONT_REMAP = {};
+
 export function fontCss(id, size) {
-  const f = fontById(id);
+  const f = fontById(FONT_REMAP[id] || id);
   return `${f.style} ${f.weight} ${Math.round(size)}px ${f.family}, "Anton", sans-serif`;
 }
 

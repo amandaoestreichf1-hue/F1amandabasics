@@ -1,6 +1,6 @@
 // "Compostos de Pneu": didactic tyre animations — line-up with grip/durability bars, one compound in
 // focus with wear dropping, and race strategy stints on a lap timeline.
-import { setFont, wrapLines } from '../lib/paper.js';
+import { setFont, wrapLines, applyShadow, clearShadow, isSoftShadow } from '../lib/paper.js';
 import { sceneBg, revealText } from './soft.js';
 import { ease, range, clamp } from './common.js';
 
@@ -17,16 +17,15 @@ export function drawTyre(ctx, x, y, r, comp, { spin = 0, wear = 0, outline = '#f
   const c = COMPOUNDS[comp] || COMPOUNDS.M;
   ctx.save();
   ctx.translate(x, y);
-  if (shadow) {
-    ctx.save();
-    ctx.filter = shadow.blur ? `blur(${shadow.blur}px)` : 'none';
+  if (shadow && !isSoftShadow(shadow)) {
     ctx.fillStyle = shadow.color;
     ctx.beginPath(); ctx.arc(shadow.dx, shadow.dy, r + 8, 0, Math.PI * 2); ctx.fill();
-    ctx.restore();
   }
   // sticker border
   ctx.fillStyle = outline;
+  if (isSoftShadow(shadow)) applyShadow(ctx, shadow);
   ctx.beginPath(); ctx.arc(0, 0, r + 8, 0, Math.PI * 2); ctx.fill();
+  clearShadow(ctx);
   // rubber
   ctx.fillStyle = '#16151a';
   ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
@@ -120,6 +119,24 @@ export const tyres = {
   desc: 'Apresenta os compostos com aderência × durabilidade, um pneu em destaque com desgaste, ou a estratégia de paradas.',
   category: 'didatico',
   defaultDuration: 4,
+  cues: (P) => {
+    const t0 = P.bg !== 'none' && P.bgEnter !== 'cut' ? 0.22 : 0.05;
+    const out = [...(P.bg !== 'none' ? [{ t: 0, s: 'whoosh', label: 'fundo' }] : [])];
+    if (P.title) out.push({ t: t0, s: 'typing', d: 0.3, label: 'título' });
+    if (P.mode === 'lineup') {
+      const n = P.set === 'all' ? 5 : P.set === 'wet' ? 2 : 3;
+      for (let i = 0; i < n; i++) {
+        out.push({ t: t0 + 0.25 + i * 0.28, s: 'whoosh', label: `pneu ${i + 1} rola` });
+        out.push({ t: t0 + 0.7 + i * 0.28, s: 'pop', label: `barras ${i + 1}` });
+      }
+    } else if (P.mode === 'focus') {
+      out.push({ t: t0 + 0.15, s: 'whoosh', label: 'pneu rola' });
+      out.push({ t: t0 + 0.6, s: 'typing', d: 0.4, label: 'nome' });
+    } else {
+      out.push({ t: t0 + 0.3, s: 'whoosh', label: 'linha do tempo' });
+    }
+    return out;
+  },
   fields: [
     { key: 'mode', label: 'Animação', type: 'select', options: [['lineup', 'Apresentar os compostos'], ['focus', 'Um composto em destaque'], ['strategy', 'Estratégia (stints e paradas)']], default: 'lineup' },
     { key: 'title', label: 'Título', type: 'text', default: 'OS PNEUS' },
@@ -165,7 +182,7 @@ export const tyres = {
         const y = top + i * rowH;
         const xEnd = W * 0.22;
         const x = -r * 1.5 + (xEnd + r * 1.5) * roll;
-        const spin = -((1 - roll) * 6) + Math.sin(t * 1.5 + i) * 0.04;
+        const spin = -((1 - roll) * 6) + (t - st) * 0.5;
         drawTyre(ctx, x, y, r, k, { spin, shadow: rc.shadow });
         const tx = W * 0.42;
         const k2 = range(t, st + 0.3, st + 0.6);
@@ -190,7 +207,7 @@ export const tyres = {
       const r = 230;
       const roll = ease.outBack(range(t, t0 + 0.15, t0 + 0.75), 1.2);
       const x = W / 2 + (1 - roll) * -W, y = cy - 120;
-      const wearP = P.wear ? ease.inOutQuart(range(t, t0 + 1.2, dur - 0.5)) : 0;
+      const wearP = P.wear ? ease.inOutQuart(range(t, t0 + 1.2, t0 + 1.2 + Math.max(0.6, (rc.realDur ?? dur) - t0 - 1.8))) : 0;
       const rubber = 100 - (100 - P.wearEnd) * wearP;
       drawTyre(ctx, x, y, r, c.key, { spin: -(1 - roll) * 8 + t * 0.4, wear: (100 - rubber) / 100, shadow: rc.shadow });
       const name = P.code ? `${c.name} · ${P.code}` : c.name;

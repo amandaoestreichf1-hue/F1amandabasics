@@ -1,6 +1,7 @@
 // Single source of truth for drawing a frame — used by the live preview AND the exporter,
 // so what you see is exactly what gets exported.
-import { templateById } from '../templates/index.js';
+import { templateById, isTransition } from '../templates/index.js';
+import { FONT_REMAP } from './fonts.js';
 import { drawSticker } from './car.js';
 import { ease, range, clamp } from './easing.js';
 import { rng } from './rng.js';
@@ -47,14 +48,32 @@ export function renderFrame(ctx, state, assets, time, { editor = false } = {}) {
   ctx.save();
   const sh = state.shadow;
   STYLE.tear = state.tear ?? 1;
+  STYLE.look = state.look || 'soft';
+  FONT_REMAP.Courier = STYLE.look === 'soft' ? 'Hand' : undefined;
+  const transition = isTransition(tpl);
+  // "Terminar parado": overlays never reach their exit; the clip simply ends on the held frame
+  const holdEnd = !!state.holdEnd && !transition;
   const rc = {
-    ctx, W, H, t, dur, boil,
+    ctx, W, H, t, dur: holdEnd ? dur + 1000 : dur, realDur: dur, boil,
     P: state.params[tpl.id],
     pal: soften(state.palette, state.soft || 0),
     fonts: state.fonts,
     shadow: sh.on ? { dx: sh.size * 0.6, dy: sh.size, color: rgba(sh.color, sh.opacity ?? 0.85), blur: sh.blur || 0 } : null,
     img: (id) => (id ? assets[id]?.img || null : null),
   };
+  // Continuous motion while on screen, so nothing sits frozen like a still
+  const idle = transition ? 'none' : state.idle || 'push';
+  if (idle !== 'none') {
+    const cx = W / 2, cy = H * (rc.P?.posY ?? 0.5);
+    const h = clamp(t / dur);
+    let sc = 1, rot = 0, dy = 0;
+    if (idle === 'push') sc = 1 + 0.03 * (0.5 - 0.5 * Math.cos(h * Math.PI));
+    else if (idle === 'float') { dy = Math.sin(t * 1.7) * 7; rot = Math.sin(t * 1.15) * 0.004; sc = 1.012; }
+    ctx.translate(cx, cy + dy);
+    ctx.rotate(rot);
+    ctx.scale(sc, sc);
+    ctx.translate(-cx, -cy);
+  }
   try {
     tpl.render(rc);
   } catch (e) {

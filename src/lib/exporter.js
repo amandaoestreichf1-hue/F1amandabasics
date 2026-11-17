@@ -1,6 +1,6 @@
 // Frame-accurate offline export (not real-time capture), 1080x1920 with alpha.
 import JSZip from 'jszip';
-import { Output, WebMOutputFormat, BufferTarget, CanvasSource, QUALITY_VERY_HIGH, canEncodeVideo } from 'mediabunny';
+import { Output, WebMOutputFormat, Mp4OutputFormat, BufferTarget, CanvasSource, QUALITY_VERY_HIGH, canEncodeVideo } from 'mediabunny';
 import { renderFrame, W, H } from './renderer.js';
 
 function makeCanvas() {
@@ -104,7 +104,7 @@ async function exportWebMRecorder(c, ctx, state, assets, { fps, onProgress, sign
   return new Blob(chunks, { type: 'video/webm' });
 }
 
-export async function exportPNGZip(state, assets, { fps = 30, onProgress, signal, baseName = 'frame' } = {}) {
+export async function exportPNGZip(state, assets, { fps = 30, onProgress, signal, baseName = 'frame', extraText } = {}) {
   const { c, ctx } = makeCanvas();
   const frames = Math.max(1, Math.round(state.duration * fps));
   const zip = new JSZip();
@@ -116,6 +116,7 @@ export async function exportPNGZip(state, assets, { fps = 30, onProgress, signal
     folder.file(`${baseName}_${String(i).padStart(4, '0')}.png`, blob);
     onProgress?.(((i + 1) / frames) * 0.85);
   }
+  if (extraText) folder.file('MARCAS-DE-SOM.txt', extraText);
   folder.file('LEIA-ME.txt',
     `Sequência PNG transparente 1080x1920 · ${fps} fps · ${frames} quadros\n\n` +
     `CapCut (computador): Mídia > Importar a pasta inteira, selecione todos os PNGs na ordem e arraste para a linha do tempo;\n` +
@@ -129,4 +130,39 @@ export async function exportStillPNG(state, assets, time) {
   const { c, ctx } = makeCanvas();
   renderFrame(ctx, state, assets, time);
   return new Promise((r) => c.toBlob(r, 'image/png'));
+}
+
+// Chroma-key export: the animation over a solid key colour, as an opaque MP4 (H.264).
+// Works everywhere — in CapCut (phone / iPad): Recortar > Chroma key, pick the colour.
+export async function exportChroma(state, assets, { fps = 30, key = '#00ff00', keepShadow = false, onProgress, signal } = {}) {
+  const { c, ctx } = makeCanvas();
+  const out = document.createElement('canvas');
+  out.width = W;
+  out.height = H;
+  const octx = out.getContext('2d', { alpha: false });
+  const st = keepShadow ? state : { ...state, shadow: { ...state.shadow, on: false } };
+  const frames = Math.max(1, Math.round(state.duration * fps));
+  let codec = 'avc', format = new Mp4OutputFormat({ fastStart: 'in-memory' }), ext = 'mp4';
+  if (!(await canEncodeVideo('avc', { width: W, height: H }).catch(() => false))) {
+    codec = 'vp9';
+    format = new WebMOutputFormat();
+    ext = 'webm';
+  }
+  const output = new Output({ format, target: new BufferTarget() });
+  const source = new CanvasSource(out, { codec, bitrate: QUALITY_VERY_HIGH, keyFrameInterval: 1 });
+  output.addVideoTrack(source, { frameRate: fps });
+  await output.start();
+  for (let i = 0; i < frames; i++) {
+    if (signal?.aborted) { await output.cancel(); throw new DOMException('cancelado', 'AbortError'); }
+    renderFrame(ctx, st, assets, i / fps);
+    octx.fillStyle = key;
+    octx.fillRect(0, 0, W, H);
+    octx.drawImage(c, 0, 0);
+    await source.add(i / fps, 1 / fps);
+    onProgress?.((i + 1) / frames);
+    if (i % 4 === 0) await tick();
+  }
+  source.close();
+  await output.finalize();
+  return { blob: new Blob([output.target.buffer], { type: ext === 'mp4' ? 'video/mp4' : 'video/webm' }), ext };
 }

@@ -43,3 +43,30 @@ export function allDefaultParams() {
   TEMPLATES.forEach((t) => (out[t.id] = defaultParams(t)));
   return out;
 }
+
+// Sound cues (pop / typing / whoosh) for syncing SFX in CapCut
+export function getCues(state) {
+  const tpl = templateById(state.templateId);
+  const P = state.params[tpl.id];
+  const dur = state.duration;
+  const list = (tpl.cues ? tpl.cues(P, dur) : []).filter((c) => c.t <= dur);
+  if (!isTransition(tpl) && !state.holdEnd) list.push({ t: Math.max(0, dur - 0.24), s: 'whoosh', label: 'saída' });
+  return list.sort((a, b) => a.t - b.t);
+}
+
+export const SFX = {
+  whoosh: { icon: '💨', name: 'WHOOSH' },
+  pop: { icon: '🫧', name: 'POP' },
+  typing: { icon: '⌨️', name: 'TYPING' },
+};
+
+export function cuesText(state, fps = 30) {
+  const tpl = templateById(state.templateId);
+  const fmt = (t) => t.toFixed(2).replace('.', ',') + 's';
+  const lines = getCues(state).map((c) => {
+    const frame = Math.round(c.t * fps);
+    const d = c.d ? ` até ${fmt(c.t + c.d)}` : '';
+    return `${fmt(c.t)}${d}  (quadro ${frame})  ${SFX[c.s].name}  ·  ${c.label}`;
+  });
+  return `Marcas de som · ${tpl.name} · ${state.duration.toFixed(2).replace('.', ',')}s\n\n${lines.join('\n')}\n`;
+}

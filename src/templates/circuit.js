@@ -116,6 +116,23 @@ export const circuitMap = {
   desc: 'Traçado real da pista: desenha, colore setores, faz um setor piscar, numera curvas e dá zoom numa curva.',
   category: 'didatico',
   defaultDuration: 4.5,
+  cues: (P) => {
+    const t0 = P.bg !== 'none' && P.bgEnter !== 'cut' ? 0.22 : 0.05;
+    const after = t0 + (P.draw ? 1.25 : 0.3);
+    const out = [
+      ...(P.bg !== 'none' ? [{ t: 0, s: 'whoosh', label: 'fundo' }] : []),
+      { t: t0, s: 'typing', d: 0.4, label: 'título' },
+      { t: t0, s: 'whoosh', label: P.draw ? 'pista se desenha' : 'pista aparece' },
+    ];
+    if (P.sectorFocus !== '0') out.push({ t: after + 0.1, s: 'pop', label: 'setor em destaque' });
+    if (P.turns) out.push({ t: after, s: 'pop', label: 'curvas (uma a uma)' });
+    if (P.focusBy !== 'none') {
+      if (P.zoom) out.push({ t: after + 0.15, s: 'whoosh', label: 'zoom na curva' });
+      out.push({ t: after + (P.zoom ? 0.6 : 0.2), s: 'pop', label: 'círculo na curva' });
+      out.push({ t: after + (P.zoom ? 0.9 : 0.5), s: 'typing', d: 0.4, label: 'nome da curva' });
+    }
+    return out;
+  },
   fields: [
     { key: 'circuit', label: 'Circuito (calendário 2026)', type: 'select', options: CIRCUITS.map((c) => [c.id, `${c.name} · ${c.sub}`]), default: 'interlagos' },
     { key: 'title', label: 'Título (vazio = nome do GP)', type: 'text', default: '' },
@@ -134,7 +151,7 @@ export const circuitMap = {
     { key: 'turnName', label: 'Nome da curva (ex.: CURVA 15)', type: 'text', default: '', group: 'O que mostrar', showIf: (P) => P.focusBy !== 'none' },
     { key: 'turnNote', label: 'Nota (ex.: 130R)', type: 'text', default: '', group: 'O que mostrar', showIf: (P) => P.focusBy !== 'none' },
     { key: 'zoom', label: 'Zoom na curva em destaque', type: 'toggle', default: true, group: 'O que mostrar', showIf: (P) => P.focusBy !== 'none' },
-    { key: 'lap', label: 'Bolinha dando a volta', type: 'toggle', default: false, group: 'O que mostrar' },
+    { key: 'lap', label: 'Bolinha dando a volta', type: 'toggle', default: true, group: 'O que mostrar' },
     { key: 'lapTime', label: 'Tempo de uma volta (s)', type: 'range', min: 1, max: 8, step: 0.1, default: 2.5, group: 'O que mostrar', showIf: (P) => P.lap },
     { key: 'lapImg', label: 'Trocar bolinha por PNG (opcional)', type: 'image', libCategory: 'object', frames: false, group: 'O que mostrar', showIf: (P) => P.lap },
     { key: 'startLine', label: 'Marcar largada/chegada', type: 'toggle', default: true, group: 'O que mostrar' },

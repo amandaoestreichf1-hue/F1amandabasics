@@ -44,6 +44,13 @@ export const quemServiu = {
   desc: 'Capa de revista pós-corrida com foto, selo Setor Roxo e manchete recortada.',
   category: 'card',
   defaultDuration: 2.6,
+  cues: () => [
+    { t: 0, s: 'whoosh', label: 'card entra' },
+    { t: 0.1, s: 'pop', label: 'foto' },
+    { t: 0.14, s: 'pop', label: 'título' },
+    { t: 0.32, s: 'typing', d: 0.3, label: 'subtítulo' },
+    { t: 0.55, s: 'pop', label: 'selo' },
+  ],
   fields: [
     { key: 'title', label: 'Título', type: 'text', default: 'QUEM SERVIU' },
     { key: 'subtitle', label: 'Subtítulo', type: 'textarea', default: 'Segurou o undercut como se fosse fácil.' },
@@ -155,6 +162,13 @@ export const quemDormiu = {
   desc: 'Nota de redação estilo Bandeira Amarela / Safety Car com foto e carimbo.',
   category: 'card',
   defaultDuration: 2.6,
+  cues: () => [
+    { t: 0, s: 'whoosh', label: 'card entra' },
+    { t: 0.1, s: 'pop', label: 'foto' },
+    { t: 0.14, s: 'pop', label: 'título' },
+    { t: 0.32, s: 'typing', d: 0.3, label: 'subtítulo' },
+    { t: 0.55, s: 'pop', label: 'selo' },
+  ],
   fields: [
     { key: 'title', label: 'Título', type: 'text', default: 'QUEM DORMIU' },
     { key: 'subtitle', label: 'Subtítulo', type: 'textarea', default: 'Largou em P3 e acordou em P11.' },
