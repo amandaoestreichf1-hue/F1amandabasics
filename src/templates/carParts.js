@@ -32,81 +32,90 @@ const ell = (ctx, cx, cy, rx, ry) => {
 
 // Each part: shape(ctx) adds sub-paths; lines(ctx) optional detail strokes; anchor for callouts.
 // kind: 'body' | 'tyre' | 'dark' | 'line' decides the base colouring.
+// Units ≈ millimetres / 2.5. Proportions follow the 2026 rules: 3.4 m wheelbase, 1.9 m width,
+// narrower tyres, narrower curved front wing, rounded rear wing on a swan-neck pylon, no beam wing,
+// sculpted sidepods with undercut, smaller diffuser.
 const TOP = {
-  box: [-360, -880, 360, 860],
+  box: [-400, -1040, 400, 970],
   parts: [
-    { id: 'floor', kind: 'body', anchor: [-300, 250], shape: (c) => poly(c, [[-120, -430], [120, -430], [262, -300], [300, -150], [300, 420], [250, 560], [-250, 560], [-300, 420], [-300, -150], [-262, -300]]),
-      lines: (c) => { c.moveTo(-285, -120); c.lineTo(-285, 400); c.moveTo(285, -120); c.lineTo(285, 400); } },
-    { id: 'diffuser', kind: 'body', anchor: [0, 650], shape: (c) => poly(c, [[-210, 560], [210, 560], [228, 700], [-228, 700]]),
-      lines: (c) => { [-120, -40, 40, 120].forEach((x) => { c.moveTo(x, 570); c.lineTo(x * 1.08, 690); }); } },
-    { id: 'rearTyres', kind: 'tyre', anchor: [-290, 560], shape: (c) => { rrect(c, -290, 560, 150, 235, 36); rrect(c, 290, 560, 150, 235, 36); },
-      lines: (c) => { [-290, 290].forEach((x) => { for (let k = -80; k <= 80; k += 40) { c.moveTo(x - 60, 560 + k); c.lineTo(x + 60, 560 + k); } }); } },
-    { id: 'frontTyres', kind: 'tyre', anchor: [290, -560], shape: (c) => { rrect(c, -288, -560, 122, 212, 32); rrect(c, 288, -560, 122, 212, 32); },
-      lines: (c) => { [-288, 288].forEach((x) => { for (let k = -70; k <= 70; k += 35) { c.moveTo(x - 48, -560 + k); c.lineTo(x + 48, -560 + k); } }); } },
-    { id: 'brakes', kind: 'dark', anchor: [-222, -560], shape: (c) => { rrect(c, -222, -560, 22, 90, 6); rrect(c, 222, -560, 22, 90, 6); rrect(c, -207, 560, 24, 100, 6); rrect(c, 207, 560, 24, 100, 6); } },
-    { id: 'frontSusp', kind: 'line', anchor: [170, -585], shape: () => {},
-      lines: (c) => { [-1, 1].forEach((s) => { c.moveTo(s * 55, -620); c.lineTo(s * 228, -585); c.moveTo(s * 60, -500); c.lineTo(s * 228, -540); c.moveTo(s * 50, -560); c.lineTo(s * 228, -560); }); } },
-    { id: 'rearSusp', kind: 'line', anchor: [-170, 540], shape: () => {},
-      lines: (c) => { [-1, 1].forEach((s) => { c.moveTo(s * 95, 500); c.lineTo(s * 214, 535); c.moveTo(s * 70, 610); c.lineTo(s * 214, 585); c.moveTo(s * 85, 560); c.lineTo(s * 214, 560); }); } },
-    { id: 'sidepods', kind: 'body', anchor: [-245, 0], shape: (c) => {
-      const L = [[-108, -262], [-232, -236], [-266, -130], [-262, 110], [-206, 330], [-118, 450]];
+    { id: 'floor', kind: 'body', anchor: [-326, 120], shape: (c) => poly(c, [[-150, -440], [150, -440], [290, -410], [332, -340], [332, 360], [300, 450], [228, 520], [228, 700], [-228, 700], [-228, 520], [-300, 450], [-332, 360], [-332, -340], [-290, -410]]),
+      lines: (c) => { [-1, 1].forEach((s2) => { c.moveTo(s2 * 318, -320); c.lineTo(s2 * 318, 350); c.moveTo(s2 * 300, -300); c.quadraticCurveTo(s2 * 290, -360, s2 * 250, -400); }); } },
+    { id: 'diffuser', kind: 'body', anchor: [-150, 770], shape: (c) => poly(c, [[-205, 640], [205, 640], [222, 800], [-222, 800]]),
+      lines: (c) => { [-110, -36, 36, 110].forEach((x) => { c.moveTo(x, 650); c.lineTo(x * 1.08, 792); }); } },
+    { id: 'rearTyres', kind: 'tyre', anchor: [-305, 680], shape: (c) => { rrect(c, -305, 680, 150, 288, 42); rrect(c, 305, 680, 150, 288, 42); },
+      lines: (c) => { [-305, 305].forEach((x) => { for (let k = -100; k <= 100; k += 50) { c.moveTo(x - 60, 680 + k); c.lineTo(x + 60, 680 + k); } }); } },
+    { id: 'frontTyres', kind: 'tyre', anchor: [-324, -680], shape: (c) => { rrect(c, -324, -680, 112, 288, 36); rrect(c, 324, -680, 112, 288, 36); },
+      lines: (c) => { [-324, 324].forEach((x) => { for (let k = -100; k <= 100; k += 50) { c.moveTo(x - 42, -680 + k); c.lineTo(x + 42, -680 + k); } }); } },
+    { id: 'brakes', kind: 'dark', anchor: [-262, -680], shape: (c) => { [-1, 1].forEach((s2) => { rrect(c, s2 * 262, -680, 16, 96, 5); rrect(c, s2 * 222, 680, 18, 104, 5); }); } },
+    { id: 'frontSusp', kind: 'line', anchor: [-170, -682], shape: () => {},
+      lines: (c) => { [-1, 1].forEach((s2) => { c.moveTo(s2 * 62, -742); c.lineTo(s2 * 268, -700); c.moveTo(s2 * 72, -636); c.lineTo(s2 * 268, -662); c.moveTo(s2 * 84, -600); c.lineTo(s2 * 266, -690); }); } },
+    { id: 'rearSusp', kind: 'line', anchor: [-160, 680], shape: () => {},
+      lines: (c) => { [-1, 1].forEach((s2) => { c.moveTo(s2 * 96, 615); c.lineTo(s2 * 230, 660); c.moveTo(s2 * 80, 745); c.lineTo(s2 * 230, 702); c.moveTo(s2 * 104, 690); c.lineTo(s2 * 230, 680); }); } },
+    { id: 'sidepods', kind: 'body', anchor: [-284, -160], shape: (c) => {
+      const L = [[-112, -340], [-250, -332], [-282, -262], [-286, -60], [-262, 120], [-200, 300], [-130, 430], [-105, 470]];
       poly(c, L); poly(c, mirror(L));
-    }, lines: (c) => { c.moveTo(-232, -228); c.lineTo(-120, -248); c.moveTo(232, -228); c.lineTo(120, -248); } },
-    { id: 'engine', kind: 'body', anchor: [0, 330], shape: (c) => poly(c, [[-112, 60], [112, 60], [96, 400], [42, 630], [-42, 630], [-96, 400]]),
-      lines: (c) => { c.moveTo(0, 90); c.lineTo(0, 610); } },
-    { id: 'chassis', kind: 'body', anchor: [-112, -330], shape: (c) => poly(c, [[-56, -560], [56, -560], [112, -300], [116, 62], [-116, 62], [-112, -300]]) },
-    { id: 'nose', kind: 'body', anchor: [0, -690], shape: (c) => { c.moveTo(-28, -800); c.quadraticCurveTo(0, -830, 28, -800); c.lineTo(56, -560); c.lineTo(-56, -560); c.closePath(); } },
-    { id: 'cockpit', kind: 'dark', anchor: [60, -150], shape: (c) => ell(c, 0, -140, 62, 108),
-      lines: (c) => { c.moveTo(-70, -60); c.quadraticCurveTo(-78, -250, 0, -262); c.quadraticCurveTo(78, -250, 70, -60); c.moveTo(0, -262); c.lineTo(0, -200); } },
-    { id: 'mirrors', kind: 'body', anchor: [-160, -300], shape: (c) => { ell(c, -160, -300, 34, 18); ell(c, 160, -300, 34, 18); } },
-    { id: 'frontWing', kind: 'body', anchor: [-300, -810], shape: (c) => { poly(c, [[-345, -852], [345, -852], [348, -768], [-348, -768]]); },
-      lines: (c) => { [-830, -808, -788].forEach((y) => { c.moveTo(-335, y); c.quadraticCurveTo(0, y + 16, 335, y); }); c.moveTo(-338, -852); c.lineTo(-338, -768); c.moveTo(338, -852); c.lineTo(338, -768); } },
-    { id: 'rearWing', kind: 'body', anchor: [270, 780], shape: (c) => { poly(c, [[-272, 738], [272, 738], [272, 812], [-272, 812]]); rrect(c, -280, 772, 22, 120, 6); rrect(c, 280, 772, 22, 120, 6); },
-      lines: (c) => { c.moveTo(-262, 772); c.lineTo(262, 772); c.moveTo(0, 700); c.lineTo(0, 738); } },
+    }, lines: (c) => { [-1, 1].forEach((s2) => { c.moveTo(s2 * 248, -322); c.lineTo(s2 * 124, -332); c.moveTo(s2 * 268, -120); c.quadraticCurveTo(s2 * 240, 150, s2 * 150, 380); }); } },
+    { id: 'engine', kind: 'body', anchor: [-80, 420], shape: (c) => poly(c, [[-112, -60], [112, -60], [98, 250], [60, 600], [28, 862], [-28, 862], [-60, 600], [-98, 250]]),
+      lines: (c) => { c.moveTo(0, -30); c.lineTo(0, 840); } },
+    { id: 'chassis', kind: 'body', anchor: [-115, -460], shape: (c) => poly(c, [[-62, -620], [62, -620], [112, -380], [118, -60], [-118, -60], [-112, -380]]) },
+    { id: 'nose', kind: 'body', anchor: [-30, -820], shape: (c) => { c.moveTo(-16, -1000); c.quadraticCurveTo(0, -1018, 16, -1000); c.lineTo(62, -620); c.lineTo(-62, -620); c.closePath(); } },
+    { id: 'cockpit', kind: 'dark', anchor: [-62, -200], shape: (c) => ell(c, 0, -200, 60, 112),
+      lines: (c) => { c.moveTo(-76, -100); c.quadraticCurveTo(-86, -330, 0, -346); c.quadraticCurveTo(86, -330, 76, -100); c.moveTo(0, -346); c.lineTo(0, -292); } },
+    { id: 'mirrors', kind: 'body', anchor: [-160, -410], shape: (c) => { ell(c, -160, -410, 38, 15); ell(c, 160, -410, 38, 15); },
+      lines: (c) => { c.moveTo(-122, -410); c.lineTo(-100, -400); c.moveTo(122, -410); c.lineTo(100, -400); } },
+    { id: 'frontWing', kind: 'body', anchor: [-300, -965], shape: (c) => poly(c, [[-345, -985], [-200, -1008], [0, -1016], [200, -1008], [345, -985], [352, -932], [328, -906], [170, -930], [0, -946], [-170, -930], [-328, -906], [-352, -932]]),
+      lines: (c) => { [0, 1, 2].forEach((k) => { c.moveTo(-336, -968 + k * 20); c.quadraticCurveTo(0, -1012 + k * 24, 336, -968 + k * 20); }); } },
+    { id: 'rearWing', kind: 'body', anchor: [-225, 915], shape: (c) => poly(c, [[-236, 880], [-120, 870], [0, 868], [120, 870], [236, 880], [246, 915], [226, 948], [0, 952], [-226, 948], [-246, 915]]),
+      lines: (c) => { c.moveTo(-230, 910); c.quadraticCurveTo(0, 896, 230, 910); c.moveTo(0, 850); c.lineTo(0, 868); } },
   ],
-  // streamlines for airflow (car space)
   flow: [
-    { pts: [[-330, -980], [-345, -700], [-330, -300], [-330, 400], [-300, 980]] },
-    { pts: [[-180, -980], [-170, -650], [-290, -320], [-300, 200], [-160, 640], [-150, 980]] },
-    { pts: [[0, -980], [0, -830], [0, -300], [0, 300], [0, 980]] },
-    { pts: [[180, -980], [170, -650], [290, -320], [300, 200], [160, 640], [150, 980]] },
-    { pts: [[330, -980], [345, -700], [330, -300], [330, 400], [300, 980]] },
+    { pts: [[-372, -1160], [-388, -700], [-372, 0], [-348, 700], [-330, 1160]] },
+    { pts: [[-200, -1160], [-206, -900], [-300, -420], [-300, 100], [-150, 520], [-150, 1160]] },
+    { pts: [[0, -1160], [0, -1030], [0, 1160]] },
+    { pts: [[200, -1160], [206, -900], [300, -420], [300, 100], [150, 520], [150, 1160]] },
+    { pts: [[372, -1160], [388, -700], [372, 0], [348, 700], [330, 1160]] },
   ],
 };
 
 const SIDE = {
-  box: [-860, -190, 890, 210],
+  box: [-960, -250, 1090, 160],
   parts: [
-    { id: 'rearWing', kind: 'body', anchor: [-740, -150], shape: (c) => { poly(c, [[-835, -150], [-640, -150], [-640, -112], [-835, -112]]); rrect(c, -790, -20, 44, 250, 10); poly(c, [[-760, 60], [-600, 60], [-600, 78], [-760, 78]]); },
-      lines: (c) => { c.moveTo(-830, -128); c.lineTo(-646, -128); } },
-    { id: 'rearTyres', kind: 'tyre', anchor: [-560, 0], shape: (c) => ell(c, -560, 100, 108, 108),
-      lines: (c) => { ell(c, -560, 100, 70, 70); } },
-    { id: 'floor', kind: 'dark', anchor: [0, 182], shape: (c) => poly(c, [[-560, 168], [560, 168], [585, 178], [560, 188], [-560, 188]]) },
-    { id: 'diffuser', kind: 'body', anchor: [-660, 150], shape: (c) => poly(c, [[-560, 168], [-724, 118], [-744, 136], [-560, 188]]),
-      lines: (c) => { c.moveTo(-600, 160); c.lineTo(-700, 132); } },
-    { id: 'engine', kind: 'body', anchor: [-330, -40], shape: (c) => { c.moveTo(-620, 70); c.lineTo(-440, -6); c.quadraticCurveTo(-200, -64, 60, -58); c.lineTo(80, 40); c.lineTo(-620, 92); c.closePath(); },
-      lines: (c) => { c.moveTo(-430, -10); c.lineTo(-560, -60); c.lineTo(-90, -62); } },
-    { id: 'sidepods', kind: 'body', anchor: [80, 90], shape: (c) => { c.moveTo(-300, 150); c.quadraticCurveTo(-250, 60, -100, 52); c.lineTo(300, 46); c.quadraticCurveTo(340, 95, 330, 150); c.closePath(); },
-      lines: (c) => { c.moveTo(300, 56); c.lineTo(300, 120); } },
-    { id: 'chassis', kind: 'body', anchor: [300, 120], shape: (c) => poly(c, [[60, 26], [400, 42], [404, 150], [60, 150]]) },
-    { id: 'nose', kind: 'body', anchor: [640, 110], shape: (c) => { c.moveTo(400, 42); c.lineTo(820, 120); c.quadraticCurveTo(872, 134, 866, 150); c.lineTo(404, 150); c.closePath(); } },
-    { id: 'cockpit', kind: 'dark', anchor: [160, -90], shape: (c) => ell(c, 165, -40, 34, 34),
-      lines: (c) => { c.moveTo(100, 22); c.quadraticCurveTo(170, -110, 300, 30); } },
-    { id: 'mirrors', kind: 'body', anchor: [300, -40], shape: (c) => { poly(c, [[285, -22], [335, -30], [335, -8], [285, -4]]); } },
-    { id: 'frontWing', kind: 'body', anchor: [790, 180], shape: (c) => { poly(c, [[690, 160], [884, 160], [884, 186], [690, 186]]); rrect(c, 872, 150, 26, 80, 6); },
-      lines: (c) => { c.moveTo(700, 172); c.lineTo(870, 172); } },
-    { id: 'frontTyres', kind: 'tyre', anchor: [560, 20], shape: (c) => ell(c, 560, 110, 98, 98),
-      lines: (c) => { ell(c, 560, 110, 62, 62); } },
-    { id: 'brakes', kind: 'dark', anchor: [560, 110], shape: (c) => { ell(c, 560, 110, 34, 34); ell(c, -560, 100, 38, 38); } },
-    { id: 'frontSusp', kind: 'line', anchor: [470, 70], shape: () => {},
-      lines: (c) => { c.moveTo(560, 110); c.lineTo(404, 60); c.moveTo(560, 110); c.lineTo(404, 135); } },
-    { id: 'rearSusp', kind: 'line', anchor: [-470, 60], shape: () => {},
-      lines: (c) => { c.moveTo(-560, 100); c.lineTo(-420, 40); c.moveTo(-560, 100); c.lineTo(-430, 120); } },
+    { id: 'rearWing', kind: 'body', anchor: [-860, -215], shape: (c) => {
+      poly(c, [[-940, -172], [-772, -180], [-770, -152], [-938, -142]]);
+      poly(c, [[-930, -208], [-792, -214], [-790, -190], [-928, -182]]);
+      c.moveTo(-952, -220); c.quadraticCurveTo(-964, -120, -930, -62); c.lineTo(-904, -62); c.quadraticCurveTo(-928, -130, -918, -220); c.closePath();
+    }, lines: (c) => { c.moveTo(-860, -208); c.quadraticCurveTo(-830, -110, -780, -36); } },
+    { id: 'rearTyres', kind: 'tyre', anchor: [-680, -138], shape: (c) => ell(c, -680, 6, 144, 144), lines: (c) => ell(c, -680, 6, 92, 92) },
+    { id: 'floor', kind: 'dark', anchor: [-60, 140], shape: (c) => poly(c, [[-600, 128], [560, 128], [592, 139], [560, 150], [-600, 150]]) },
+    { id: 'diffuser', kind: 'body', anchor: [-760, 92], shape: (c) => poly(c, [[-600, 128], [-822, 72], [-842, 92], [-600, 150]]),
+      lines: (c) => { c.moveTo(-640, 136); c.lineTo(-800, 92); } },
+    { id: 'engine', kind: 'body', anchor: [-420, -86], shape: (c) => { c.moveTo(-790, -28); c.lineTo(-220, -112); c.lineTo(10, -218); c.lineTo(84, -218); c.lineTo(96, -80); c.lineTo(-790, 12); c.closePath(); },
+      lines: (c) => { c.moveTo(-40, -176); c.lineTo(-660, -44); c.moveTo(30, -205); c.lineTo(70, -205); } },
+    { id: 'sidepods', kind: 'body', anchor: [-40, 10], shape: (c) => { c.moveTo(342, -42); c.quadraticCurveTo(364, 12, 340, 70); c.quadraticCurveTo(220, 76, 120, 108); c.lineTo(-420, 128); c.lineTo(-480, 58); c.quadraticCurveTo(-200, -22, 300, -50); c.closePath(); },
+      lines: (c) => { c.moveTo(334, -32); c.lineTo(334, 62); c.moveTo(300, -40); c.quadraticCurveTo(-100, -10, -450, 62); } },
+    { id: 'chassis', kind: 'body', anchor: [400, 60], shape: (c) => poly(c, [[90, -62], [452, -42], [470, 128], [90, 128]]) },
+    { id: 'nose', kind: 'body', anchor: [780, 30], shape: (c) => { c.moveTo(452, -42); c.quadraticCurveTo(760, -12, 1010, 94); c.quadraticCurveTo(1036, 108, 1020, 122); c.lineTo(470, 128); c.closePath(); } },
+    { id: 'cockpit', kind: 'dark', anchor: [175, -130], shape: (c) => ell(c, 176, -90, 36, 36),
+      lines: (c) => { c.moveTo(96, -64); c.quadraticCurveTo(190, -152, 382, -50); c.moveTo(160, -96); c.lineTo(206, -96); } },
+    { id: 'mirrors', kind: 'body', anchor: [345, -100], shape: (c) => poly(c, [[318, -94], [374, -102], [374, -80], [318, -74]]),
+      lines: (c) => { c.moveTo(330, -74); c.lineTo(320, -48); } },
+    { id: 'frontWing', kind: 'body', anchor: [970, 140], shape: (c) => {
+      poly(c, [[880, 128], [1072, 128], [1072, 145], [880, 145]]);
+      poly(c, [[860, 96], [990, 108], [988, 124], [858, 112]]);
+      poly(c, [[848, 70], [930, 80], [928, 96], [846, 86]]);
+      c.moveTo(1048, 58); c.quadraticCurveTo(1088, 92, 1080, 148); c.lineTo(1050, 148); c.closePath();
+    } },
+    { id: 'frontTyres', kind: 'tyre', anchor: [680, -138], shape: (c) => ell(c, 680, 6, 144, 144), lines: (c) => ell(c, 680, 6, 92, 92) },
+    { id: 'brakes', kind: 'dark', anchor: [680, 6], shape: (c) => { ell(c, 680, 6, 52, 52); ell(c, -680, 6, 58, 58); } },
+    { id: 'frontSusp', kind: 'line', anchor: [560, 0], shape: () => {},
+      lines: (c) => { c.moveTo(680, 6); c.lineTo(462, -26); c.moveTo(680, 6); c.lineTo(466, 70); c.moveTo(650, 30); c.lineTo(472, -36); } },
+    { id: 'rearSusp', kind: 'line', anchor: [-560, 0], shape: () => {},
+      lines: (c) => { c.moveTo(-680, 6); c.lineTo(-470, -40); c.moveTo(-680, 6); c.lineTo(-470, 60); } },
   ],
   flow: [
-    { pts: [[980, 40], [700, 60], [420, 0], [150, -150], [-300, -110], [-700, -190], [-980, -200]] },
-    { pts: [[980, 110], [860, 110], [500, 30], [200, -40], [-400, -60], [-680, -200], [-980, -230]] },
-    { pts: [[980, 196], [700, 196], [300, 196], [-300, 196], [-560, 194], [-740, 150], [-980, 120]], under: true },
+    { pts: [[1160, 40], [900, 40], [650, -150], [300, -112], [140, -186], [-300, -168], [-860, -250], [-1120, -268]] },
+    { pts: [[1160, 100], [1000, 100], [500, -60], [-500, -46], [-900, -124], [-1120, -140]] },
+    { pts: [[1160, 146], [700, 146], [300, 142], [-500, 142], [-600, 140], [-822, 80], [-1120, 40]], under: true },
   ],
 };
 
@@ -152,6 +161,7 @@ export const carAnatomy = {
     { key: 'title', label: 'Título (opcional)', type: 'text', default: '' },
     { key: 'subtitle', label: 'Subtítulo (opcional)', type: 'text', default: '' },
     ...hlFields,
+    { key: 'labels', label: 'Textos ficam do lado', type: 'select', options: [['left', 'Esquerdo (carro à direita)'], ['right', 'Direito (carro à esquerda)']], default: 'left', group: 'Destaques', showIf: (P) => P.view !== 'side' },
     { key: 'step', label: 'Tempo de cada destaque (s)', type: 'range', min: 0.6, max: 3, step: 0.1, default: 1.2, group: 'Destaques' },
     { key: 'stack', label: 'Manter os destaques anteriores acesos', type: 'toggle', default: true, group: 'Destaques' },
     { key: 'zoom', label: 'Zoom em cada destaque', type: 'toggle', default: false, group: 'Destaques' },
@@ -188,11 +198,18 @@ export const carAnatomy = {
     const G = P.view === 'side' ? SIDE : TOP;
     const [bx0, by0, bx1, by1] = G.box;
     const cy = H * P.posY;
-    const boxW = W * (P.view === 'side' ? 0.92 : 0.44) * P.scale;
-    const boxH = H * (P.view === 'side' ? 0.3 : 0.6) * P.scale;
+    const top = P.view !== 'side';
+    const boxW = W * (top ? 0.42 : 0.94) * P.scale;
+    const boxH = H * (top ? 0.62 : 0.3) * P.scale;
     const s = Math.min(boxW / (bx1 - bx0), boxH / (by1 - by0));
-    const ox = W / 2 - ((bx0 + bx1) / 2) * s, oy = cy - ((by0 + by1) / 2) * s;
+    // top view: car on one side, a wide column for the labels on the other
+    const carCx = top ? (P.labels === 'right' ? W * 0.31 : W * 0.69) : W / 2;
+    const ox = carCx - ((bx0 + bx1) / 2) * s, oy = cy - ((by0 + by1) / 2) * s;
     const toScreen = ([x, y]) => [ox + x * s, oy + y * s];
+    const anchorFor = (id) => {
+      const a0 = partAnchor(G, id);
+      return P.view !== 'side' && P.labels === 'right' ? [-a0[0], a0[1]] : a0;
+    };
 
     const t0 = P.bg !== 'none' && P.bgEnter !== 'cut' ? 0.22 : 0.05;
     const buildLen = P.build === 'assemble' ? 0.9 : P.build === 'pop' ? 0.3 : 0;
@@ -209,8 +226,8 @@ export const carAnatomy = {
     let cam = { k: 0, x: 0, y: 0 };
     if (P.zoom && activeIdx >= 0) {
       const st = starts[activeIdx];
-      const prev = activeIdx > 0 ? toScreen(partAnchor(G, list[activeIdx - 1].id)) : null;
-      const cur = toScreen(partAnchor(G, list[activeIdx].id));
+      const prev = activeIdx > 0 ? toScreen(anchorFor(list[activeIdx - 1].id)) : null;
+      const cur = toScreen(anchorFor(list[activeIdx].id));
       const k = ease.inOutQuart(range(t, st, st + 0.5));
       const zx = prev ? prev[0] + (cur[0] - prev[0]) * k : cur[0];
       const zy = prev ? prev[1] + (cur[1] - prev[1]) * k : cur[1];
@@ -347,23 +364,52 @@ export const carAnatomy = {
 
     // callouts (screen space, outside the camera)
     const carL = ox + bx0 * s, carR = ox + bx1 * s, carT = oy + by0 * s, carB = oy + by1 * s;
-    const colW = P.view === 'side' ? W * 0.8 : Math.max(180, carL - 48 - 24);
-    const nameSize = P.view === 'side' ? 60 : 50, noteSize = P.view === 'side' ? 40 : 34;
+    const labelSide = P.labels === 'right' ? 'right' : 'left';
+    const colW = P.view === 'side' ? W * 0.8 : labelSide === 'left' ? carL - 48 - 40 : W - 48 - carR - 40;
+    const nameSize = P.view === 'side' ? 60 : 56, noteSize = P.view === 'side' ? 40 : 38;
     const glowTxt = P.bg === 'none' ? 'rgba(255,255,255,0.9)' : null;
     const nextY = { left: 0, right: 0, top: carT - 40, bottom: carB + 110 };
+    const measureW = (txt) => {
+      setFont(ctx, pickFont(rc, P.titleFont), nameSize);
+      const w = ctx.measureText(txt).width;
+      if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+      return w;
+    };
+    // top view: lay out every label once, in the order the parts sit on the car, so each one stays beside its part
+    const topLayout = {};
+    if (P.view !== 'side') {
+      const items = list.map((h, i) => {
+        setFont(ctx, pickFont(rc, P.titleFont), nameSize);
+        const nl = wrapLines(ctx, h.name, colW).length;
+        setFont(ctx, 'Hand', noteSize);
+        const tl = h.note ? wrapLines(ctx, h.note, colW).length : 0;
+        if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+        const bh = nl * nameSize * 1.08 + tl * noteSize * 1.25 + (h.tag ? 100 : 0);
+        return { i, ay: camApply(toScreen(anchorFor(h.id)))[1], bh };
+      }).sort((a, b) => a.ay - b.ay);
+      let y = 200;
+      items.forEach((it) => {
+        const want = it.ay - nameSize * 0.45;
+        it.y = Math.max(want, y);
+        y = it.y + it.bh + 56;
+      });
+      const overflow = y - 56 - (H - 170);
+      if (overflow > 0) items.forEach((it) => (it.y -= overflow));
+      items.forEach((it) => (topLayout[it.i] = it.y));
+    }
     list.forEach((h, i) => {
       if (!isOn(i)) return;
       const st = starts[i];
       const k = range(t, st, st + 0.3);
       if (k <= 0) return;
-      const a = camApply(toScreen(partAnchor(G, h.id)));
+      const a = camApply(toScreen(anchorFor(h.id)));
       // measure the block (name + note) to stack labels without overlap
       setFont(ctx, pickFont(rc, P.titleFont), nameSize);
       const nameLines = wrapLines(ctx, h.name, colW).length;
       setFont(ctx, 'Hand', noteSize);
       const noteLines = h.note ? wrapLines(ctx, h.note, colW).length : 0;
       if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
-      const blockH = nameLines * nameSize * 1.05 + noteLines * noteSize * 1.15 + (h.tag ? 90 : 0);
+      const blockH = nameLines * nameSize * 1.08 + noteLines * noteSize * 1.25 + (h.tag ? 100 : 0);
       let lx, ly, align, ex, ey;
       if (P.view === 'side') {
         const above = i % 2 === 0;
@@ -372,14 +418,12 @@ export const carAnatomy = {
         if (above) { ly = Math.min(nextY.top, carT - 40) - blockH + nameSize / 2; nextY.top = ly - nameSize / 2 - 30; ex = lx; ey = ly + blockH - nameSize / 2 + 6; }
         else { ly = nextY.bottom; nextY.bottom = ly + blockH + 30; ex = lx; ey = ly - nameSize / 2 - 10; }
       } else {
-        const center = Math.abs(a[0] - W / 2) < 40;
-        const side = center ? (i % 2 === 0 ? 'left' : 'right') : a[0] < W / 2 ? 'left' : 'right';
+        const side = labelSide;
         align = side;
         lx = side === 'left' ? 48 : W - 48;
-        ly = Math.max(clamp(a[1] - blockH / 2, 230, H - 230 - blockH), nextY[side]);
-        nextY[side] = ly + blockH + 40;
-        ex = side === 'left' ? carL - 14 : carR + 14;
-        ey = ly + 4;
+        ly = topLayout[i];
+        ex = side === 'left' ? lx + Math.min(colW, measureW(h.name)) + 24 : lx - Math.min(colW, measureW(h.name)) - 24;
+        ey = ly + nameSize * 0.45;
         ly += nameSize / 2;
       }
       const fade = P.stack ? 1 : 1 - range(t, (starts[i + 1] ?? 1e9) - 0.15, starts[i + 1] ?? 1e9);
@@ -389,13 +433,13 @@ export const carAnatomy = {
       ctx.fillStyle = P.focusColor;
       ctx.beginPath(); ctx.arc(a[0], a[1], 12 * ease.outBack(k, 2), 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4; ctx.stroke();
-      const nh = revealText(ctx, h.name, { x: lx, y: ly, fontId: pickFont(rc, P.titleFont), size: nameSize, color: P.inkColor, align, start: st + 0.05, per: 0.08, t, maxWidth: colW, lineH: 1.05, glow: glowTxt });
-      let y2 = ly - nameSize / 2 + nh + noteSize * 0.55;
-      if (h.note) y2 += revealText(ctx, h.note, { x: lx, y: y2, fontId: 'Hand', size: noteSize, color: P.inkColor, align, start: st + 0.2, per: 0.07, t, maxWidth: colW, lineH: 1.15, glow: glowTxt });
+      const nh = revealText(ctx, h.name, { x: lx, y: ly, fontId: pickFont(rc, P.titleFont), size: nameSize, color: P.inkColor, align, start: st + 0.05, per: 0.08, t, maxWidth: colW, lineH: 1.08, glow: glowTxt });
+      let y2 = ly - nameSize / 2 + nh + noteSize * 0.75;
+      if (h.note) y2 += revealText(ctx, h.note, { x: lx, y: y2, fontId: 'Hand', size: noteSize, color: P.inkColor, align, start: st + 0.2, per: 0.07, t, maxWidth: colW, lineH: 1.25, glow: glowTxt });
       if (h.tag) {
         const tw = Math.min(colW, 260);
         const tx = align === 'left' ? lx + tw / 2 : align === 'right' ? lx - tw / 2 : lx;
-        stamp(ctx, { x: tx, y: y2 + 20, text: h.tag.toUpperCase(), color: P.focusColor, width: 280, rot: -0.08, progress: range(t, st + 0.35, st + 0.6) });
+        stamp(ctx, { x: tx, y: y2 + 30, text: h.tag.toUpperCase(), color: P.focusColor, width: 280, rot: -0.08, progress: range(t, st + 0.35, st + 0.6) });
       }
       ctx.restore();
     });

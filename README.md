@@ -32,7 +32,7 @@ Use **Chrome ou Edge no computador** (melhor suporte a WebCodecs, VP9 com alfa e
   - uma bolinha ou o seu PNG dando a volta
 
   Os limites dos setores são ajustáveis, porque o padrão divide a volta em terços.
-- **Anatomia do Carro:** um monoposto genérico (não é o carro de nenhuma equipe), em vista de cima ou lateral, que se monta peça por peça.
+- **Anatomia do Carro:** um monoposto genérico com proporções das regras de 2026 (entre-eixos de 3,4 m, 1,9 m de largura, pneus mais estreitos, asa dianteira curva, asa traseira arredondada sem beam wing). Não é o carro de nenhuma equipe. Vista de cima ou lateral, com o carro se montando peça por peça.
   - até 3 destaques em sequência: asa dianteira, assoalho, difusor, pneus, sidepods, asa traseira, freios, suspensão…
   - cada destaque tem nome, nota e etiqueta (ex.: UPGRADE)
   - a peça destacada aparece em raio-x, então dá para ver até as peças escondidas
