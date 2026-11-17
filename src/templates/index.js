@@ -1,6 +1,7 @@
 import { carWipe, startLights } from './transitions.js';
 import { quemServiu, quemDormiu } from './cards.js';
-import { errata, lowerThird, ticker } from './overlays.js';
+import { errata, ticker } from './overlays.js';
+import { carAnatomy } from './carParts.js';
 import { checkerWipe, disclaimer, pointsCompare } from './soft.js';
 import { circuitMap } from './circuit.js';
 import { tyres } from './tyres.js';
@@ -8,7 +9,7 @@ import { tyres } from './tyres.js';
 checkerWipe.category = disclaimer.category = pointsCompare.category = 'lilas';
 checkerWipe.isTransition = true;
 
-export const TEMPLATES = [circuitMap, tyres, checkerWipe, disclaimer, pointsCompare, carWipe, startLights, quemServiu, quemDormiu, errata, lowerThird, ticker];
+export const TEMPLATES = [circuitMap, carAnatomy, tyres, checkerWipe, disclaimer, pointsCompare, carWipe, startLights, quemServiu, quemDormiu, errata, ticker];
 
 export const CATEGORIES = [
   { id: 'didatico', label: '✎ Didático · pista & pneus', hint: 'Para explicar circuitos, setores, curvas e compostos.' },

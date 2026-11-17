@@ -32,6 +32,11 @@ Use **Chrome ou Edge no computador** (melhor suporte a WebCodecs, VP9 com alfa e
   - uma bolinha ou o seu PNG dando a volta
 
   Os limites dos setores são ajustáveis, porque o padrão divide a volta em terços.
+- **Anatomia do Carro:** um monoposto genérico (não é o carro de nenhuma equipe), em vista de cima ou lateral, que se monta peça por peça.
+  - até 3 destaques em sequência: asa dianteira, assoalho, difusor, pneus, sidepods, asa traseira, freios, suspensão…
+  - cada destaque tem nome, nota e etiqueta (ex.: UPGRADE)
+  - a peça destacada aparece em raio-x, então dá para ver até as peças escondidas
+  - zoom opcional e fluxo de ar animado
 - **Compostos de Pneu:**
   - apresentação dos compostos com barras de aderência × durabilidade
   - um composto em destaque com o desgaste caindo
@@ -49,14 +54,12 @@ Os demais templates aparecem abaixo. Todos usam a paleta Lilás por padrão; ao 
 
 | Categoria | Template | Notas |
 |---|---|---|
-| A · Transições | **Manchete Wipe** | Tiras de jornal com manchetes editáveis e carimbo *BREAKING* |
-| | **Passagem de Carro** | Carrinho ilustrado na cor da equipe **ou seu PNG**; rastro de papel, zebra ou jornal |
-| | **Luzes de Largada** | 5 luzes recortadas e presas com fita, apagando em *LIGHTS OUT* |
-| B · Pós-corrida | **Quem Serviu** | Capa de revista, foto (Polaroid / recorte / PNG solto), selo *Purple Sector* |
-| | **Quem Dormiu** | Faixa Safety Car / Bandeira Amarela, foto P&B, carimbo *BOX BOX*, Zzz |
+| A · Transições | **Passagem de Carro** | Carrinho ilustrado ou seu PNG cruza a tela; rastro lilás, xadrez ou papel quadriculado |
+| | **Luzes de Largada** | 5 luzes presas com fita, apagando em *LIGHTS OUT* |
+| B · Pós-corrida | **Quem Serviu** | Capa de revista, foto (Polaroid / recorte / PNG solto), adesivo *Purple Sector* |
+| | **Quem Dormiu** | Faixa Safety Car / Bandeira Amarela, foto P&B, adesivo *BOX BOX*, Zzz |
 | C · Overlays | **Errata / Correção** | Bloco pautado, texto riscado com marcador e correção datilografada |
-| | **Tarja / Manchete** | Lower third em papel rasgado |
-| | **Placar / Posição** | `P12 ➔ P4` com contador rolando, ou `P2 ➔ DNF` com carimbo |
+| | **Placar / Posição** | `P12 ➔ P4` com contador rolando, ou `P2 ➔ DNF` |
 
 - **11 equipes do grid 2026** com paletas automáticas e color pickers livres.
 - **Fontes:** Anton, Syne, Playfair Display (itálico), Courier Prime, mais **upload de .ttf/.otf/.woff** (ex.: Bootzy TM).

@@ -4,6 +4,8 @@ import { carSticker, drawSticker } from '../lib/car.js';
 import { fontCss } from '../lib/fonts.js';
 import { rng } from '../lib/rng.js';
 import { jit, deg, ease, range, clamp } from './common.js';
+import { gingham } from './soft.js';
+import { graphLines } from '../lib/paper.js';
 
 // ---------------------------------------------------------------------------
 // Car / PNG pass wipe
@@ -11,26 +13,21 @@ import { jit, deg, ease, range, clamp } from './common.js';
 export const carWipe = {
   id: 'carWipe',
   name: 'Passagem de Carro',
-  desc: 'Carro ilustrado (ou seu PNG) cruza a tela deixando rastro de papel / zebra.',
+  desc: 'O carrinho (ou seu PNG) cruza a tela e o rastro cobre tudo; depois abre na próxima cena.',
   category: 'transition',
   defaultDuration: 0.9,
   cutPoint: 0.55,
   cues: (P, dur) => [
     { t: 0.05, s: 'whoosh', label: 'carro cruzando' },
-    ...(P.cover ? [{ t: dur * 0.58, s: 'whoosh', label: 'papel abre' }] : []),
+    ...(P.cover ? [{ t: dur * 0.58, s: 'whoosh', label: 'abre' }] : []),
   ],
   fields: [
-    { key: 'carMode', label: 'Objeto', type: 'select', options: [['native', 'Carrinho ilustrado (cor da equipe)'], ['png', 'Meu PNG (carro, capacete, objeto)']], default: 'native' },
-    { key: 'carPng', label: 'PNG que cruza a tela', type: 'image', frames: false, libCategory: 'object', showIf: (P) => P.carMode === 'png' },
-    { key: 'carFlip', label: 'Espelhar PNG', type: 'toggle', default: false, showIf: (P) => P.carMode === 'png' },
+    { key: 'carMode', label: 'Quem cruza a tela', type: 'select', options: [['native', 'Carrinho ilustrado'], ['png', 'Meu PNG (carro, capacete, cabecinha)']], default: 'native' },
+    { key: 'carPng', label: 'PNG', type: 'image', frames: false, libCategory: 'object', showIf: (P) => P.carMode === 'png' },
     { key: 'carNumber', label: 'Número do carro', type: 'text', default: '4', showIf: (P) => P.carMode === 'native' },
-    { key: 'dir', label: 'Direção', type: 'select', options: [['ltr', 'Esquerda → Direita'], ['rtl', 'Direita → Esquerda']], default: 'ltr' },
-    { key: 'carScale', label: 'Tamanho do objeto', type: 'range', min: 0.5, max: 1.6, step: 0.05, default: 1 },
-    { key: 'carY', label: 'Altura na tela', type: 'range', min: 0.15, max: 0.85, step: 0.01, default: 0.5 },
-    { key: 'trail', label: 'Rastro', type: 'select', options: [['torn', 'Papel rasgado (equipe)'], ['kerb', 'Zebra de pista'], ['news', 'Jornal']], default: 'torn' },
-    { key: 'cover', label: 'Cobrir tela inteira (corte)', type: 'toggle', default: true },
-    { key: 'trailText', label: 'Texto no rastro', type: 'text', default: 'FULL PUSH' },
-    { key: 'speedLines', label: 'Linhas de velocidade', type: 'toggle', default: true },
+    { key: 'trail', label: 'Rastro', type: 'select', options: [['lilac', 'Lilás'], ['gingham', 'Xadrez lilás'], ['graph', 'Papel quadriculado']], default: 'lilac' },
+    { key: 'cover', label: 'Rastro cobre a tela (transição)', type: 'toggle', default: true },
+    { key: 'dir', label: 'Direção', type: 'select', options: [['ltr', 'Esquerda → direita'], ['rtl', 'Direita → esquerda']], default: 'ltr' },
   ],
   render(rc) {
     const { ctx, W, H, pal, P, t, dur } = rc;
@@ -38,109 +35,61 @@ export const carWipe = {
     const rtl = P.dir === 'rtl';
     ctx.save();
     if (rtl) { ctx.translate(W, 0); ctx.scale(-1, 1); }
-    const sc = P.carScale;
-    const carW = 980 * sc;
-    const cy = H * P.carY;
-    // car travel: off-left -> off-right by 52%
+    const carW = 900;
+    const cy = H * 0.5;
     const travel = ease.inOutQuart(range(p, 0, 0.52));
     const carX = -carW * 0.6 + travel * (W + carW * 1.2);
-    const rear = carX - carW * 0.45;
-    const front = carX + carW * 0.5;
-    const j = jit(rc, 1, 1.5);
-    const trailColor = P.trail === 'news' ? pal.paper : pal.accent;
-    const trailTex = P.trail === 'news' ? 'news' : 'grain';
-
-    const drawBandContent = (g, w, h) => {
-      if (P.trail === 'kerb') {
-        kerb(g, 0, 0, w, 90, pal.accent, '#fbf9f3', 80);
-        kerb(g, 0, h - 90, w, 90, pal.accent, '#fbf9f3', 80);
-      } else if (P.trail === 'torn') {
-        // inner collage strip in secondary color
-        g.fillStyle = pal.paper2 === pal.accent ? pal.accent2 : pal.paper2;
-        g.globalAlpha = 0.95;
-        g.fillRect(0, h * 0.5 - 60, w, 120);
-        g.globalAlpha = 1;
-      }
-      if (P.trailText) {
-        g.save();
-        if (rtl) { g.translate(w, 0); g.scale(-1, 1); }
-        g.font = fontCss(rc.fonts.head, 120);
-        g.fillStyle = P.trail === 'news' ? pal.ink : pal.paper;
-        g.globalAlpha = 0.95;
-        g.textBaseline = 'middle';
-        const tw = g.measureText(P.trailText + '   ').width;
-        const off = -((t * 900) % tw);
-        for (let x = off; x < w; x += tw) g.fillText(P.trailText, x, h * 0.5 + 6);
-        g.restore();
-      }
+    const rear = carX - carW * 0.42;
+    const fillBand = (x, y, w, h) => {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, w, h);
+      ctx.clip();
+      if (P.trail === 'gingham') gingham(ctx, x, y, w, h, { size: 150, c1: pal.paper2, c2: pal.linen });
+      else if (P.trail === 'graph') {
+        ctx.fillStyle = pal.paper; ctx.fillRect(x, y, w, h);
+        ctx.translate(x, y); graphLines(ctx, w, h, 24);
+      } else { ctx.fillStyle = pal.accent; ctx.fillRect(x, y, w, h); }
+      ctx.restore();
+      // soft leading edge
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.fillRect(x + w - 10, y, 10, h);
     };
-
     if (P.cover) {
-      const coverP = ease.outQuart(range(p, 0.05, 0.5));
-      const split = ease.inOutExpo(range(p, 0.58, 1));
-      const bandH = 380 * sc + coverP * (H + 500 - 380 * sc);
-      const bandCy = cy + (H / 2 - cy) * coverP;
-      const left = -260;
-      const right = Math.max(left + 10, Math.min(rear + 120, W + 300));
-      const bw = right - left;
-      if (split <= 0) {
-        if (bw > 20)
-          paperPiece(ctx, { x: left + bw / 2 + j.dx, y: bandCy + j.dy, w: bw, h: bandH, color: trailColor, seed: 701, amp: 18, step: 26, texture: trailTex, newsSeed: 2, shadow: rc.shadow, torn: { l: false } }, drawBandContent);
-      } else {
-        // tear in half, top goes up, bottom goes down
-        const half = (H + 500) / 2;
-        const off = split * (half + 200);
-        paperPiece(ctx, { x: W / 2 + j.dx, y: H / 2 - half / 2 - off - 40, w: W + 520, h: half + 80, color: trailColor, seed: 731, amp: 22, step: 30, texture: trailTex, newsSeed: 2, shadow: rc.shadow, torn: { l: false, r: false, t: false }, rot: -split * 0.06 }, (g, w, h) => drawBandContent(g, w, h * 2));
-        paperPiece(ctx, { x: W / 2 - j.dx, y: H / 2 + half / 2 + off + 40, w: W + 520, h: half + 80, color: trailColor, seed: 733, amp: 22, step: 30, texture: trailTex, newsSeed: 2, shadow: rc.shadow, torn: { l: false, r: false, b: false }, rot: split * 0.05 }, (g, w, h) => { g.translate(0, -h); drawBandContent(g, w, h * 2); });
-      }
+      const grow = ease.outQuart(range(p, 0.04, 0.5));
+      const bh = 260 + grow * (H - 260);
+      const reveal = ease.inOutExpo(range(p, 0.58, 1));
+      const right = Math.min(W + 20, rear + 60);
+      const left = reveal * (W + 40);
+      if (right > left) fillBand(left - 20, cy - bh / 2, right - left + 20, bh);
     } else {
-      // overlay: trail follows the car and fades out
-      const trailLen = 1300 * sc;
-      const l = Math.max(-200, rear - trailLen * (0.4 + travel * 0.6));
-      const bw = rear + 80 - l;
       const fade = 1 - ease.inCubic(range(p, 0.55, 1));
-      if (bw > 30 && fade > 0)
-        paperPiece(ctx, { x: l + bw / 2, y: cy + 70 * sc + j.dy, w: bw, h: 240 * sc, color: trailColor, seed: 702, amp: 14, step: 22, texture: trailTex, shadow: rc.shadow, alpha: fade, rot: -0.01 }, drawBandContent);
+      const l = Math.max(-40, rear - 900 * (0.3 + travel * 0.7));
+      if (rear > l) { ctx.globalAlpha *= fade; fillBand(l, cy - 110, rear + 40 - l, 220); ctx.globalAlpha = 1; }
     }
-
-    // speed lines
-    if (P.speedLines && travel > 0 && travel < 1) {
+    // a few speed lines behind the car
+    if (travel > 0 && travel < 1) {
       const r = rng(Math.floor(t * 30) + 3);
       ctx.save();
-      ctx.strokeStyle = pal.ink;
+      ctx.strokeStyle = '#ffffff';
       ctx.lineCap = 'round';
-      for (let i = 0; i < 9; i++) {
-        const yy = cy - 150 * sc + r() * 300 * sc;
-        const len = 160 + r() * 380;
-        ctx.lineWidth = 4 + r() * 8;
-        ctx.globalAlpha = 0.8;
-        ctx.beginPath();
-        ctx.moveTo(rear - 40 - r() * 80, yy);
-        ctx.lineTo(rear - 40 - len, yy);
-        ctx.stroke();
+      for (let i = 0; i < 5; i++) {
+        const yy = cy - 120 + r() * 240, len = 160 + r() * 260;
+        ctx.lineWidth = 6 + r() * 6;
+        ctx.globalAlpha = 0.9;
+        ctx.beginPath(); ctx.moveTo(rear - 30, yy); ctx.lineTo(rear - 30 - len, yy); ctx.stroke();
       }
       ctx.restore();
     }
-
-    // the car / object
+    const front = carX + carW * 0.5;
     if (front > -50 && rear < W + 50) {
       const bob = Math.sin(t * 60) * 3;
-      const tilt = -0.025 + (1 - travel) * 0.01;
       if (P.carMode === 'png') {
         const img = rc.img(P.carPng);
-        if (img) {
-          drawSticker(ctx, img, { x: carX + j.dx, y: cy + bob, w: carW, rot: tilt + j.dr, flip: !!P.carFlip, shadow: rc.shadow });
-        } else {
-          ctx.save();
-          ctx.fillStyle = pal.ink;
-          ctx.font = fontCss('Courier', 46);
-          ctx.textAlign = 'center';
-          ctx.fillText('[ suba seu PNG ]', carX, cy);
-          ctx.restore();
-        }
+        if (img) drawSticker(ctx, img, { x: carX, y: cy + bob, w: carW * 0.8, rot: -0.02, shadow: rc.shadow });
       } else {
-        const st = carSticker({ color: pal.car, color2: pal.car2, ink: '#121212', number: P.carNumber, mirrorNumber: rtl });
-        drawSticker(ctx, st, { x: carX + j.dx, y: cy + bob, w: carW, rot: tilt + j.dr, shadow: rc.shadow });
+        const st = carSticker({ color: pal.car, color2: pal.car2, ink: '#1f1b24', number: P.carNumber, mirrorNumber: rtl });
+        drawSticker(ctx, st, { x: carX, y: cy + bob, w: carW, rot: -0.02, shadow: rc.shadow });
       }
     }
     ctx.restore();
