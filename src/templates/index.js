@@ -5,15 +5,29 @@ import { carAnatomy } from './carParts.js';
 import { checkerWipe, disclaimer, pointsCompare } from './soft.js';
 import { circuitMap } from './circuit.js';
 import { tyres } from './tyres.js';
+import { weekend, qualifying, pointsTable, flagsBoard, penalties, ladder, startGrid, teamRadio, orgChart } from './f1edu.js';
+import { courtAnatomy, surfaces, scoreExplained, drawPath, pyramid, h2h, matchClock } from './tennis.js';
+import { glossary, flowchart, counter, driverCard, playerCard, podium, endCard } from './universal.js';
 
 checkerWipe.category = disclaimer.category = pointsCompare.category = 'lilas';
 checkerWipe.isTransition = true;
+// which mode each template shows up in (F1 or tennis); the rest default to F1
+[checkerWipe, disclaimer, pointsCompare, errata].forEach((t) => (t.sports = ['f1', 'tennis']));
 
-export const TEMPLATES = [circuitMap, carAnatomy, tyres, checkerWipe, disclaimer, pointsCompare, carWipe, startLights, quemServiu, quemDormiu, errata, ticker];
+export const TEMPLATES = [
+  circuitMap, carAnatomy, tyres, weekend, qualifying, pointsTable, flagsBoard, penalties, ladder, startGrid, teamRadio, orgChart,
+  courtAnatomy, surfaces, scoreExplained, drawPath, pyramid, h2h, matchClock,
+  glossary, flowchart, counter, driverCard, playerCard, podium, endCard,
+  checkerWipe, disclaimer, pointsCompare, carWipe, startLights, quemServiu, quemDormiu, errata, ticker,
+];
+export const sportsOf = (t) => t.sports || ['f1'];
+export const templatesFor = (sport) => TEMPLATES.filter((t) => sportsOf(t).includes(sport));
 
 export const CATEGORIES = [
-  { id: 'didatico', label: '✎ Didático · pista & pneus', hint: 'Para explicar circuitos, setores, curvas e compostos.' },
-  { id: 'lilas', label: '✿ Do seu jeito · Lilás', hint: 'Baseados nas suas edições.' },
+  { id: 'didatico', label: '✎ Didático · Fórmula 1', hint: 'Para explicar a F1 para quem está chegando.' },
+  { id: 'tenis', label: '🎾 Tênis', hint: 'Quadra, superfícies, placar, chave e mais.' },
+  { id: 'universal', label: '✦ Para qualquer vídeo', hint: 'Glossário, fluxograma, contador, cards, pódio e end card.' },
+  { id: 'lilas', label: '✿ Do seu jeito', hint: 'Baseados nas suas edições.' },
   { id: 'transition', label: 'A · Transições de tela cheia', hint: 'Tela 100% coberta no meio da duração = ponto de corte.' },
   { id: 'card', label: 'B · Quem Serviu / Quem Dormiu', hint: 'Cards de resumo pós-corrida.' },
   { id: 'overlay', label: 'C · Overlays de edição', hint: 'Para jogar por cima do vídeo.' },

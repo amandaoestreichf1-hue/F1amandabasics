@@ -1,19 +1,20 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Section, TextInput, Slider, Toggle, Select, ColorInput, Btn, FileButton, Segmented, Label } from './ui.jsx';
-import { TEMPLATES, CATEGORIES, isTransition } from '../templates/index.js';
-import { TEAMS } from '../lib/teams.js';
+import { CATEGORIES, isTransition, templatesFor } from '../templates/index.js';
+import { TEAMS, TENNIS_IDENTITY } from '../lib/teams.js';
 import { allFonts } from '../lib/fonts.js';
 
 // ---------------------------------------------------------------------------
-export function TemplatePicker({ value, onChange }) {
+export function TemplatePicker({ value, onChange, sport = 'f1' }) {
+  const list = templatesFor(sport);
   return (
     <Section title="Catálogo de animações" kicker="01">
-      {CATEGORIES.map((cat) => (
+      {CATEGORIES.filter((cat) => list.some((t) => t.category === cat.id)).map((cat) => (
         <div key={cat.id} className="space-y-1.5">
           <div className="font-mono text-[11px] text-stone-400 mt-2">{cat.label}</div>
           <div className="grid grid-cols-2 gap-2">
-            {TEMPLATES.filter((t) => t.category === cat.id).map((t) => {
+            {list.filter((t) => t.category === cat.id).map((t) => {
               const active = value === t.id;
               return (
                 <motion.button
@@ -52,18 +53,19 @@ const PAL_LABELS = [
   ['linen', 'Xadrez (linho)'],
 ];
 
-export function TeamPanel({ teamId, palette, onTeam, onPalette, soft, onSoft }) {
+export function TeamPanel({ teamId, palette, onTeam, onPalette, soft, onSoft, sport = 'f1' }) {
+  const teams = sport === 'tennis' ? [TENNIS_IDENTITY] : TEAMS;
   return (
-    <Section title="Equipe · Grid 2026" kicker="02">
+    <Section title={sport === 'tennis' ? 'Cores · Tênis' : 'Equipe · Grid 2026'} kicker="02">
       <div className="grid grid-cols-2 gap-1.5">
-        {TEAMS.map((t) => {
+        {teams.map((t) => {
           const active = teamId === t.id;
           return (
             <motion.button
               key={t.id}
               whileTap={{ scale: 0.95 }}
               onClick={() => onTeam(t.id)}
-              className={`flex items-center gap-2 px-2 py-1.5 rounded-sm border text-left ${t.id === 'lilas' ? 'col-span-2' : ''} ${active ? 'border-marker bg-desk-800' : 'border-desk-700 bg-desk-850 hover:border-desk-600'}`}
+              className={`flex items-center gap-2 px-2 py-1.5 rounded-sm border text-left ${t.id === 'lilas' || t.id === 'menta' ? 'col-span-2' : ''} ${active ? 'border-marker bg-desk-800' : 'border-desk-700 bg-desk-850 hover:border-desk-600'}`}
             >
               <span className="flex -space-x-1 shrink-0">
                 {[t.palette.accent, t.palette.paper2, t.palette.accent2].map((c, i) => (
@@ -75,7 +77,7 @@ export function TeamPanel({ teamId, palette, onTeam, onPalette, soft, onSoft }) 
           );
         })}
       </div>
-      <Slider label="Suavizar cores (tons delicados)" value={soft} min={0} max={1} step={0.05} fmt={(v) => Math.round(v * 100) + '%'} onChange={onSoft} />
+      {sport !== 'tennis' && <Slider label="Suavizar cores (tons delicados)" value={soft} min={0} max={1} step={0.05} fmt={(v) => Math.round(v * 100) + '%'} onChange={onSoft} />}
       <div className="font-mono text-[11px] text-stone-500 pt-1">Cores livres (sobrescrevem a equipe):</div>
       <div className="grid grid-cols-2 gap-1.5">
         {PAL_LABELS.map(([k, l]) => (

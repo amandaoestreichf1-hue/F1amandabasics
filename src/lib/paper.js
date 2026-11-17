@@ -5,7 +5,7 @@ import { ease, clamp } from './easing.js';
 
 // Global look knobs (set by the renderer every frame)
 // look: 'soft' (her lilac, handwritten language) | 'collage' (newspaper cut-outs)
-export const STYLE = { tear: 1, look: 'soft' };
+export const STYLE = { tear: 1, look: 'soft', sport: 'f1' };
 const soft = () => STYLE.look === 'soft';
 
 // Hard shadow ("sombra seca"): an offset copy of the shape
@@ -669,7 +669,7 @@ export function drawImageContain(ctx, img, cx, cy, maxW, maxH, rot = 0) {
 
 const _ph = new Map();
 function photoPlaceholder(ctx, w, h, ink) {
-  const key = `${Math.round(w)}x${Math.round(h)}|${ink}|${STYLE.look}`;
+  const key = `${Math.round(w)}x${Math.round(h)}|${ink}|${STYLE.look}|${STYLE.sport}`;
   let c = _ph.get(key);
   if (!c) {
     c = document.createElement('canvas');
@@ -684,14 +684,15 @@ function photoPlaceholder(ctx, w, h, ink) {
 function drawPlaceholder(ctx, w, h, ink) {
   if (soft()) {
     ctx.save();
-    ctx.fillStyle = '#e4ddef';
+    const mint = STYLE.sport === 'tennis';
+    ctx.fillStyle = mint ? '#dcefe4' : '#e4ddef';
     ctx.fillRect(0, 0, w, h);
-    ctx.strokeStyle = '#b3a6d6';
+    ctx.strokeStyle = mint ? '#8fc9ac' : '#b3a6d6';
     ctx.lineWidth = 4;
     ctx.setLineDash([16, 12]);
     ctx.strokeRect(14, 14, w - 28, h - 28);
     ctx.setLineDash([]);
-    ctx.fillStyle = '#7d6fa6';
+    ctx.fillStyle = mint ? '#3f9f78' : '#7d6fa6';
     ctx.font = fontCss('Hand', Math.max(24, w * 0.075));
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';

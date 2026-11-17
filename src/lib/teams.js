@@ -7,6 +7,11 @@ export const IDENTITY = {
   palette: { paper: '#ece6dc', paper2: '#8a74a8', ink: '#4b4358', accent: '#c0b4fc', accent2: '#ffffff', tape: '#dcd2fb', car: '#c0b4fc', car2: '#ffffff', linen: '#b5a79b' },
 };
 
+export const TENNIS_IDENTITY = {
+  id: 'menta', name: 'Identidade Tênis · Menta', short: 'TEN',
+  palette: { paper: '#eef5f0', paper2: '#3f9f78', ink: '#24332d', accent: '#a8e6c9', accent2: '#ffffff', tape: '#cdeedd', car: '#a8e6c9', car2: '#ffffff', linen: '#d9e8de' },
+};
+
 export const TEAMS = [
   IDENTITY,
   { id: 'ferrari', name: 'Ferrari', short: 'FER', palette: { paper: '#f3ead8', paper2: '#d40000', ink: '#1a1410', accent: '#d40000', accent2: '#ffd400', tape: '#ffe066', car: '#d40000', car2: '#ffd400' } },
@@ -22,7 +27,7 @@ export const TEAMS = [
   { id: 'cadillac', name: 'Cadillac', short: 'CAD', palette: { paper: '#ece7dc', paper2: '#121212', ink: '#0b0b0b', accent: '#c9a54a', accent2: '#2a5bd7', tape: '#e8d9a8', car: '#141414', car2: '#c9a54a' } },
 ];
 
-export const teamById = (id) => TEAMS.find((t) => t.id === id) || TEAMS[0];
+export const teamById = (id) => (id === 'menta' ? TENNIS_IDENTITY : TEAMS.find((t) => t.id === id) || TEAMS[0]);
 
 // Color helpers
 const hex = (h) => {

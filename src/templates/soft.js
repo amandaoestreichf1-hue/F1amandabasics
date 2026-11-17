@@ -123,7 +123,7 @@ const legibility = (P) => (P.glow ? 'rgba(40,24,64,0.45)' : null);
 // ---------------------------------------------------------------------------
 export const checkerWipe = {
   id: 'checkerWipe',
-  name: 'Xadrez Lilás',
+  name: 'Xadrez de Tecido',
   desc: 'Quadradinhos de tecido lilás/linho cobrem a tela em cascata e abrem na próxima cena.',
   category: 'transition',
   defaultDuration: 1.0,

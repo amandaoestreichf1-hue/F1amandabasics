@@ -70,5 +70,27 @@ export function buildNativeTrinkets() {
     g.fillStyle = '#333'; g.beginPath(); g.arc(120, 120, 56, 0, Math.PI * 2); g.fill();
     g.fillStyle = '#e10600'; g.font = '700 26px "Courier Prime"'; g.textAlign = 'center'; g.fillText('SOFT', 120, 34);
   }))]);
+  list.push(['Bolinha', sticker(mk(220, 220, (g) => {
+    g.fillStyle = '#d7ef4f'; g.beginPath(); g.arc(110, 110, 100, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#fbf9f3'; g.lineWidth = 12;
+    g.beginPath(); g.arc(-15, 110, 95, -0.85, 0.85); g.stroke();
+    g.beginPath(); g.arc(235, 110, 95, Math.PI - 0.85, Math.PI + 0.85); g.stroke();
+  }))]);
+  list.push(['Raquete', sticker(mk(200, 380, (g) => {
+    g.strokeStyle = '#3f9f78'; g.lineWidth = 16;
+    g.beginPath(); g.ellipse(100, 110, 80, 100, 0, 0, Math.PI * 2); g.stroke();
+    g.strokeStyle = 'rgba(63,159,120,0.5)'; g.lineWidth = 3;
+    for (let x = 40; x <= 160; x += 20) { g.beginPath(); g.moveTo(x, 20); g.lineTo(x, 200); g.stroke(); }
+    for (let y = 30; y <= 190; y += 20) { g.beginPath(); g.moveTo(25, y); g.lineTo(175, y); g.stroke(); }
+    g.fillStyle = '#24332d'; g.fillRect(88, 205, 24, 160);
+  }))]);
+  list.push(['Troféu', sticker(mk(220, 260, (g) => {
+    g.fillStyle = '#e9c45a';
+    g.beginPath(); g.moveTo(40, 20); g.lineTo(180, 20); g.quadraticCurveTo(180, 150, 110, 165); g.quadraticCurveTo(40, 150, 40, 20); g.fill();
+    g.fillRect(96, 160, 28, 50); g.fillRect(60, 205, 100, 30);
+    g.strokeStyle = '#e9c45a'; g.lineWidth = 14;
+    g.beginPath(); g.arc(40, 70, 32, Math.PI * 0.5, Math.PI * 1.5); g.stroke();
+    g.beginPath(); g.arc(180, 70, 32, -Math.PI * 0.5, Math.PI * 0.5); g.stroke();
+  }))]);
   return list;
 }

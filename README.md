@@ -42,7 +42,34 @@ Use **Chrome ou Edge no computador** (melhor suporte a WebCodecs, VP9 com alfa e
   - um composto em destaque com o desgaste caindo
   - a estratégia de cada piloto, com stints e paradas (formato `NOR: M-22, H-35`)
 
-**✿ Do seu jeito · Lilás** (identidade padrão, tirada das suas edições: lilás `#c0b4fc`,
+**Fórmula 1 · mais didáticos**
+
+- **Fim de Semana de Corrida:** linha do tempo normal ou com sprint, com destaque numa etapa.
+- **Classificação Q1 · Q2 · Q3:** os 22 do grid, com 6 saindo no Q1, 6 no Q2 e a pole no Q3.
+- **Sistema de Pontos:** a tabela de corrida ou de sprint se montando, e as contas do campeonato logo abaixo.
+- **Bandeiras:** uma bandeira tremulando com o significado, ou a cartela completa.
+- **Escada de Punições:** da advertência à desclassificação.
+- **Escada das Categorias:** F4 → F1 com a F1 Academy ao lado, ou a escada da IndyCar.
+- **Grid de Largada:** os slots preenchendo, com setas de ganho e perda de posição.
+- **Rádio de Equipe:** onda de áudio animada e a frase aparecendo.
+- **Organograma da Equipe:** monta nível por nível; uma peça sai do quadro e outra pode entrar.
+
+**🎾 Tênis** (aba própria, identidade menta)
+
+- **Anatomia da Quadra:** medidas reais; as linhas se desenham e cada área ganha nome.
+- **Superfícies:** saibro, grama e quadra dura, com a bola quicando e a velocidade de cada uma.
+- **Placar Explicado:** game com deuce e vantagem, tie-break e super tie-break.
+- **Chave do Torneio:** de 128 à final, com o caminho de um jogador e os adversários.
+- **Pirâmide de Torneios:** ATP ou WTA, com os pontos de cada nível.
+- **H2H:** confronto direto entre dois tenistas.
+- **Relógio de Duração:** ponteiros girando até o tempo da partida.
+
+**✦ Para qualquer vídeo**
+
+Glossário relâmpago, fluxograma "e se…", contador de número, card de piloto ou de tenista, pódio/top 3
+e end card com o botão "Seguir" (@amanda.estreiche).
+
+**✿ Do seu jeito** (identidade padrão, tirada das suas edições: lilás `#c0b4fc`,
 xadrez lilás/linho com trama de tecido, papel quadriculado amassado, letra de mão em caixa alta):
 
 - **Xadrez Lilás:** transição com quadradinhos de tecido em cascata.

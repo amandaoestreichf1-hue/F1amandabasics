@@ -6,7 +6,7 @@ import { useLibrary } from './lib/useLibrary.js';
 import { TemplatePicker, TeamPanel, TypePanel, FieldsPanel, TrinketPanel, MotionPanel } from './components/panels.jsx';
 import { Section, Btn, Segmented, Label, Toggle } from './components/ui.jsx';
 import { TEMPLATES, templateById, allDefaultParams, defaultParams, cuesText } from './templates/index.js';
-import { teamById } from './lib/teams.js';
+import { teamById, TENNIS_IDENTITY } from './lib/teams.js';
 import { ensureBuiltinFonts } from './lib/fonts.js';
 import { buildNativeTrinkets } from './lib/nativeTrinkets.js';
 import { exportWebM, exportPNGZip, exportStillPNG, exportChroma, download, webmAlphaSupported } from './lib/exporter.js';
@@ -27,6 +27,8 @@ function initialState() {
     fonts: { head: 'Hand', body: 'PlayfairItalic', accent: 'Script' },
     motion: 'fluid',
     view: 'editor',
+    sport: 'f1',
+    sportState: {},
     durations: Object.fromEntries(TEMPLATES.map((t) => [t.id, t.defaultDuration])),
     params: allDefaultParams(),
     shadow: { on: true, size: 8, blur: 14, opacity: 0.3, color: '#4b3a78' },
@@ -149,6 +151,24 @@ export default function App() {
     setState((s) => ({ trinkets: [...s.trinkets.filter((t) => !t.auto), ...picks], selectedTrinket: null }));
   };
 
+  // F1 ⇄ tennis: each mode remembers its own template and colours
+  const goTo = (target) => {
+    if (target === 'acervo') return setState({ view: 'acervo' });
+    timeRef.current = 0;
+    setState((s) => {
+      const cur = s.sport || 'f1';
+      if (cur === target) return { view: 'editor' };
+      const saved = { ...(s.sportState || {}), [cur]: { templateId: s.templateId, teamId: s.teamId, palette: s.palette, soft: s.soft } };
+      const next = saved[target] || (target === 'tennis'
+        ? { templateId: 'courtAnatomy', teamId: 'menta', palette: { ...TENNIS_IDENTITY.palette }, soft: 0 }
+        : { templateId: 'circuitMap', teamId: 'lilas', palette: { ...teamById('lilas').palette }, soft: 0 });
+      return { view: 'editor', sport: target, sportState: saved, ...next, shadow: { ...s.shadow, color: target === 'tennis' ? '#2f5a48' : '#4b3a78' } };
+    });
+  };
+  useEffect(() => {
+    document.documentElement.style.setProperty('--color-marker', (state.sport || 'f1') === 'tennis' ? '#3f9f78' : '#8b74e0');
+  }, [state.sport]);
+
   const setParams = (patch) =>
     setState((s) => ({ params: { ...s.params, [s.templateId]: { ...s.params[s.templateId], ...patch } } }));
 
@@ -196,7 +216,7 @@ export default function App() {
 
   return (
     <div className="h-full flex flex-col">
-      <Header view={state.view} setView={(v) => setState({ view: v })} libCount={library.images.length} />
+      <Header view={state.view} sport={state.sport || 'f1'} go={goTo} libCount={library.images.length} />
       {state.view === 'acervo' ? (
         <div className="flex-1 min-h-0 bg-desk-950">
           <Library
@@ -222,8 +242,9 @@ export default function App() {
       ) : (
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
         <aside className="lg:w-[440px] shrink-0 lg:h-full overflow-y-auto scroll-thin border-r border-desk-700/70 bg-desk-900">
-          <TemplatePicker value={state.templateId} onChange={(id) => { timeRef.current = 0; setState({ templateId: id }); }} />
+          <TemplatePicker sport={state.sport || 'f1'} value={state.templateId} onChange={(id) => { timeRef.current = 0; setState({ templateId: id }); }} />
           <TeamPanel
+            sport={state.sport || 'f1'}
             teamId={state.teamId}
             palette={state.palette}
             onTeam={(id) => setState({ teamId: id, palette: { linen: '#b5a79b', ...teamById(id).palette }, soft: id === 'lilas' ? 0 : 0.35 })}
@@ -297,7 +318,7 @@ export default function App() {
   );
 }
 
-function Header({ view, setView, libCount }) {
+function Header({ view, sport, go, libCount }) {
   const letters = [
     ['P', '#c0b4fc', '#2f2a36', 'Shadows Into Light Two'], ['A', '#ece6dc', '#4b4358', 'Playfair Display'], ['D', '#8a74a8', '#fff', 'Shadows Into Light Two'],
     ['D', '#f3c6da', '#4b4358', 'Syne'], ['O', '#ece6dc', '#4b4358', 'Courier Prime'], ['C', '#b5a79b', '#fff', 'Shadows Into Light Two'], ['K', '#4b4358', '#c0b4fc', 'Playfair Display'],
@@ -320,16 +341,19 @@ function Header({ view, setView, libCount }) {
         <span className="ml-2 font-anton text-[22px] tracking-wide text-newsprint">PRESS</span>
       </div>
       <div className="hidden md:block font-mono text-[11px] text-stone-500 border-l border-desk-700 pl-4 leading-tight">
-        Gerador de transições & overlays F1<br />Reels / TikTok · 1080×1920 · fundo transparente
+        Motion didático · F1 & Tênis<br />Reels / TikTok · 1080×1920
       </div>
       <div className="flex-1" />
       <nav className="flex bg-desk-800 border border-desk-700 rounded-full p-1">
-        {[['editor', '✎ Editor'], ['acervo', `✿ Meu acervo${libCount ? ' · ' + libCount : ''}`]].map(([v, l]) => (
-          <button key={v} onClick={() => setView(v)} className={`relative px-4 py-1.5 rounded-full text-[13px] font-semibold ${view === v ? 'text-desk-950' : 'text-stone-300 hover:text-white'}`}>
-            {view === v && <motion.span layoutId="mainnav" className="absolute inset-0 rounded-full bg-[#c0b4fc]" transition={{ type: 'spring', stiffness: 600, damping: 40 }} />}
+        {[['f1', '🏎 Fórmula 1'], ['tennis', '🎾 Tênis'], ['acervo', `✿ Acervo${libCount ? ' · ' + libCount : ''}`]].map(([v, l]) => {
+          const active = view === 'acervo' ? v === 'acervo' : v === sport;
+          return (
+          <button key={v} onClick={() => go(v)} className={`relative px-4 py-1.5 rounded-full text-[13px] font-semibold ${active ? 'text-desk-950' : 'text-stone-300 hover:text-white'}`}>
+            {active && <motion.span layoutId="mainnav" className="absolute inset-0 rounded-full" style={{ background: v === 'tennis' ? '#a8e6c9' : '#c0b4fc' }} transition={{ type: 'spring', stiffness: 600, damping: 40 }} />}
             <span className="relative">{l}</span>
           </button>
-        ))}
+          );
+        })}
       </nav>
     </header>
   );

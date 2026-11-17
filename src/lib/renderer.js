@@ -49,6 +49,7 @@ export function renderFrame(ctx, state, assets, time, { editor = false } = {}) {
   const sh = state.shadow;
   STYLE.tear = state.tear ?? 1;
   STYLE.look = state.look || 'soft';
+  STYLE.sport = state.sport || 'f1';
   FONT_REMAP.Courier = STYLE.look === 'soft' ? 'Hand' : undefined;
   const transition = isTransition(tpl);
   // "Terminar parado": overlays never reach their exit; the clip simply ends on the held frame
@@ -58,6 +59,7 @@ export function renderFrame(ctx, state, assets, time, { editor = false } = {}) {
     P: state.params[tpl.id],
     pal: soften(state.palette, state.soft || 0),
     fonts: state.fonts,
+    sport: state.sport || 'f1',
     shadow: sh.on ? { dx: sh.size * 0.6, dy: sh.size, color: rgba(sh.color, sh.opacity ?? 0.85), blur: sh.blur || 0 } : null,
     img: (id) => (id ? assets[id]?.img || null : null),
   };
