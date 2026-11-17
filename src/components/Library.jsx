@@ -45,6 +45,18 @@ export default function Library({ library, fontsState, notify, onUseImage }) {
   const [busy, setBusy] = useState(false);
   const counts = useMemo(() => Object.fromEntries(IMAGE_CATEGORIES.map((c) => [c.id, images.filter((i) => i.category === c.id).length])), [images]);
   const shown = cat === 'all' ? images : images.filter((i) => i.category === cat);
+  const [lastBackup, setLastBackup] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('acervo-last-backup') || 'null'); } catch { return null; }
+  });
+  const signature = images.length + fonts.length;
+  const needsBackup = signature > 0 && (!lastBackup || lastBackup.count !== signature);
+  const doBackup = async () => {
+    const blob = await exportBackup();
+    download(blob, `acervo-paddock-press-${new Date().toISOString().slice(0, 10)}.zip`);
+    const info = { at: Date.now(), count: signature };
+    try { localStorage.setItem('acervo-last-backup', JSON.stringify(info)); } catch { /* ignore */ }
+    setLastBackup(info);
+  };
 
   const onImages = async (files) => {
     setBusy(true);
@@ -69,12 +81,7 @@ export default function Library({ library, fontsState, notify, onUseImage }) {
             </p>
           </div>
           <div className="flex gap-2">
-            <Btn
-              onClick={async () => {
-                const blob = await exportBackup();
-                download(blob, `acervo-paddock-press-${new Date().toISOString().slice(0, 10)}.zip`);
-              }}
-            >⬇ Baixar backup (.zip)</Btn>
+            <Btn variant={needsBackup ? 'primary' : 'ghost'} onClick={doBackup}>⬇ Baixar backup (.zip)</Btn>
             <FileButton
               accept=".zip"
               onFiles={async (fs) => {
@@ -88,6 +95,27 @@ export default function Library({ library, fontsState, notify, onUseImage }) {
             >⬆ Restaurar backup</FileButton>
           </div>
         </div>
+
+        <AnimatePresence>
+          {needsBackup && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="rounded-lg border border-[#c0b4fc]/50 bg-[#c0b4fc]/10 px-4 py-3 flex flex-wrap items-center gap-3"
+            >
+              <span className="text-xl">💾</span>
+              <div className="flex-1 min-w-60 text-sm text-stone-200">
+                Você tem coisas novas no acervo desde o último backup.
+                <span className="text-stone-400"> Baixe o .zip e guarde no Google Drive. Se um dia o navegador for limpo, é só clicar em “Restaurar backup”.</span>
+              </div>
+              <Btn variant="primary" onClick={doBackup}>Fazer backup agora</Btn>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        {lastBackup && !needsBackup && (
+          <div className="font-mono text-[11px] text-stone-500 -mt-6">✓ último backup em {new Date(lastBackup.at).toLocaleDateString('pt-BR')}</div>
+        )}
 
         {/* images */}
         <section className="space-y-4">
