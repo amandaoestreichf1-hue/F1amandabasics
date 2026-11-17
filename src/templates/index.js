@@ -1,14 +1,17 @@
-import { newsWipe, carWipe, startLights } from './transitions.js';
+import { carWipe, startLights } from './transitions.js';
 import { quemServiu, quemDormiu } from './cards.js';
 import { errata, lowerThird, ticker } from './overlays.js';
-import { lilacTitle, checkerWipe, disclaimer, pointsCompare } from './soft.js';
+import { checkerWipe, disclaimer, pointsCompare } from './soft.js';
+import { circuitMap } from './circuit.js';
+import { tyres } from './tyres.js';
 
-lilacTitle.category = checkerWipe.category = disclaimer.category = pointsCompare.category = 'lilas';
+checkerWipe.category = disclaimer.category = pointsCompare.category = 'lilas';
 checkerWipe.isTransition = true;
 
-export const TEMPLATES = [lilacTitle, checkerWipe, disclaimer, pointsCompare, newsWipe, carWipe, startLights, quemServiu, quemDormiu, errata, lowerThird, ticker];
+export const TEMPLATES = [circuitMap, tyres, checkerWipe, disclaimer, pointsCompare, carWipe, startLights, quemServiu, quemDormiu, errata, lowerThird, ticker];
 
 export const CATEGORIES = [
+  { id: 'didatico', label: '✎ Didático · pista & pneus', hint: 'Para explicar circuitos, setores, curvas e compostos.' },
   { id: 'lilas', label: '✿ Do seu jeito · Lilás', hint: 'Baseados nas suas edições.' },
   { id: 'transition', label: 'A · Transições de tela cheia', hint: 'Tela 100% coberta no meio da duração = ponto de corte.' },
   { id: 'card', label: 'B · Quem Serviu / Quem Dormiu', hint: 'Cards de resumo pós-corrida.' },

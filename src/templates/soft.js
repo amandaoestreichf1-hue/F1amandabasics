@@ -71,6 +71,7 @@ export function revealText(ctx, text, { x, y, fontId, size, color, align = 'cent
     ctx.shadowBlur = size * 0.18;
   }
   const outA = 1 - ease.inCubic(out);
+  const baseA = ctx.globalAlpha;
   lines.forEach((line, li) => {
     const ly = y + li * lh;
     setFont(ctx, fontId, size);
@@ -83,7 +84,7 @@ export function revealText(ctx, text, { x, y, fontId, size, color, align = 'cent
         if (t >= start + idx * per * 0.35) shown += ch;
         idx++;
       }
-      ctx.globalAlpha = outA;
+      ctx.globalAlpha = baseA * outA;
       ctx.textAlign = 'left';
       ctx.fillText(shown, lx, ly);
       return;
@@ -97,7 +98,7 @@ export function revealText(ctx, text, { x, y, fontId, size, color, align = 'cent
       if (k > 0) {
         const s = popScale + (1 - popScale) * ease.outBack(k, 2.2);
         ctx.save();
-        ctx.globalAlpha = clamp(k * 3) * outA;
+        ctx.globalAlpha = baseA * clamp(k * 3) * outA;
         ctx.translate(lx + ww / 2, ly + (1 - ease.outCubic(k)) * size * 0.18);
         ctx.scale(s * (1 - out * 0.12), s * (1 - out * 0.12));
         ctx.textAlign = 'center';
@@ -118,59 +119,6 @@ const bgEnterField = { key: 'bgEnter', label: 'Animação do fundo', type: 'sele
 const fontOpts = [['head', 'Título (do Acervo/Tipografia)'], ['body', 'Subtítulo (do Acervo/Tipografia)'], ['accent', 'Destaque (do Acervo/Tipografia)'], ['Hand', 'Letra de mão'], ['Script', 'Script'], ['Marker', 'Marcador'], ['Rounded', 'Bold largo'], ['PlayfairItalic', 'Serifada itálica'], ['Courier', 'Máquina de escrever']];
 const pickFont = (rc, v) => (v === 'head' ? rc.fonts.head : v === 'body' ? rc.fonts.body : v === 'accent' ? rc.fonts.accent || 'Script' : v);
 const legibility = (P) => (P.glow ? 'rgba(40,24,64,0.45)' : null);
-
-// ---------------------------------------------------------------------------
-export const lilacTitle = {
-  id: 'lilacTitle',
-  name: 'Título Lilás',
-  desc: 'Seu título de abertura: nome em lilás + linha bold + palavra em script, palavra por palavra.',
-  category: 'overlay',
-  defaultDuration: 2.6,
-  fields: [
-    { key: 'l1', label: 'Linha 1 (destaque)', type: 'text', default: 'VERSTAPPEN' },
-    { key: 'l2', label: 'Linha 2 (bold pequena)', type: 'text', default: 'ainda pode ser' },
-    { key: 'l3', label: 'Linha 3 (script)', type: 'text', default: 'campeão' },
-    { key: 'f1', label: 'Fonte linha 1', type: 'select', options: fontOpts, default: 'head', group: 'Estilo' },
-    { key: 'f2', label: 'Fonte linha 2', type: 'select', options: fontOpts, default: 'Rounded', group: 'Estilo' },
-    { key: 'f3', label: 'Fonte linha 3', type: 'select', options: fontOpts, default: 'accent', group: 'Estilo' },
-    { key: 'c1', label: 'Cor linha 1', type: 'color', default: '#c0b4fc', group: 'Estilo' },
-    { key: 'c2', label: 'Cor linha 2', type: 'color', default: '#ffffff', group: 'Estilo' },
-    { key: 'c3', label: 'Cor linha 3', type: 'color', default: '#ffffff', group: 'Estilo' },
-    { key: 's1', label: 'Tamanho linha 1', type: 'range', min: 60, max: 260, step: 2, default: 150, group: 'Estilo' },
-    { key: 's2', label: 'Tamanho linha 2', type: 'range', min: 30, max: 140, step: 2, default: 54, group: 'Estilo' },
-    { key: 's3', label: 'Tamanho linha 3', type: 'range', min: 60, max: 280, step: 2, default: 170, group: 'Estilo' },
-    { key: 'mode', label: 'Aparecer', type: 'select', options: [['word', 'Palavra por palavra'], ['letter', 'Letra por letra (digitando)']], default: 'word' },
-    { key: 'glow', label: 'Sombrinha p/ leitura no vídeo', type: 'toggle', default: true },
-    { ...bgField('none') },
-    bgImageField,
-    bgEnterField,
-    { key: 'posY', label: 'Posição vertical', type: 'range', min: 0.15, max: 0.85, step: 0.01, default: 0.56, group: 'Layout' },
-    { key: 'scale', label: 'Escala', type: 'range', min: 0.5, max: 1.4, step: 0.01, default: 1, group: 'Layout' },
-  ],
-  render(rc) {
-    const { ctx, W, H, P, t, dur } = rc;
-    const cy = H * P.posY;
-    const out = range(t, dur - 0.22, dur);
-    sceneBg(rc, P.bg, { enter: P.bgEnter });
-    if (out >= 1) return;
-    ctx.save();
-    ctx.translate(W / 2, cy);
-    ctx.scale(P.scale, P.scale);
-    ctx.translate(-W / 2, -cy);
-    const glow = legibility(P);
-    const y1 = cy - P.s2 * 0.55 - P.s1 * 0.42;
-    const y3 = cy + P.s2 * 0.45 + P.s3 * 0.38;
-    const n1 = P.l1 ? P.l1.split(' ').length : 0;
-    const n2 = P.l2 ? P.l2.split(' ').length : 0;
-    const per = P.mode === 'letter' ? 0.05 : 0.13;
-    const s2 = 0.1 + Math.max(1, n1) * per * (P.mode === 'letter' ? (P.l1 || '').length / Math.max(1, n1) * 0.35 : 1) + 0.08;
-    const s3 = s2 + Math.max(1, n2) * per * (P.mode === 'letter' ? (P.l2 || '').length / Math.max(1, n2) * 0.35 : 1) + 0.1;
-    revealText(ctx, P.l1, { x: W / 2, y: y1, fontId: pickFont(rc, P.f1), size: P.s1, color: P.c1, start: 0.06, per, t, mode: P.mode, glow, maxWidth: 1000 / P.scale, out });
-    revealText(ctx, P.l2, { x: W / 2, y: cy, fontId: pickFont(rc, P.f2), size: P.s2, color: P.c2, start: s2, per, t, mode: P.mode, glow, maxWidth: 1000 / P.scale, out });
-    revealText(ctx, P.l3, { x: W / 2, y: y3, fontId: pickFont(rc, P.f3), size: P.s3, color: P.c3, start: s3, per: per * 1.4, t, mode: P.mode, glow, popScale: 0.7, maxWidth: 1000 / P.scale, out });
-    ctx.restore();
-  },
-};
 
 // ---------------------------------------------------------------------------
 export const checkerWipe = {
@@ -280,7 +228,7 @@ export const disclaimer = {
       const tw = Math.min(W * 0.9, ctx.measureText(P.title).width);
       if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
       ctx.save();
-      ctx.globalAlpha = 1 - out;
+      ctx.globalAlpha *= 1 - out;
       handCircle(ctx, W / 2, cy + 4, tw * 0.55 + 24, P.titleSize * 0.62, { color: P.circleColor, width: 7, progress: ease.inOutQuart(range(t, tStart + 0.22, tStart + 0.6)), seed: 5 });
       ctx.restore();
     }
@@ -332,7 +280,7 @@ export const pointsCompare = {
         photoSlot(ctx, s.img, { x: hx, y, w: P.head, h: P.head * 1.15, rot: (s.imgRot ? 0 : -0.03), frame: s.frame, seed: 7, zoom: s.zoom, offX: s.offX, offY: s.offY, imgRot: s.imgRot, bw: s.bw, shadow: rc.shadow, ink: pal.ink, scale: sc });
         if (!s.img) {
           ctx.save();
-          ctx.globalAlpha = 0.6;
+          ctx.globalAlpha *= 0.6;
           ctx.fillStyle = pal.ink;
           setFont(ctx, 'Hand', 30);
           ctx.textAlign = 'center';
@@ -360,7 +308,7 @@ export const pointsCompare = {
         const ax = tx + P.size * 0.9;
         const ak = ease.inOutQuart(range(t, start2 + 0.5, start2 + 0.85));
         ctx.save();
-        ctx.globalAlpha = 1 - out;
+        ctx.globalAlpha *= 1 - out;
         handArrow(ctx, ax, y1 + P.size * 0.55, ax + 6, y2 - P.size * 0.6, { color: P.arrowColor, width: 6, progress: ak, seed: 3, bend: 0.02, head: 22 });
         ctx.restore();
         if (P.diff) revealText(ctx, P.diff, { x: ax + 40, y: (y1 + y2) / 2, fontId: 'Hand', size: P.size * 0.42, color: P.color, align: 'left', start: start2 + 0.8, per: 0.08, t, out });

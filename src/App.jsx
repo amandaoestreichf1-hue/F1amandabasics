@@ -16,7 +16,7 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 
 function initialState() {
   const base = {
-    templateId: 'lilacTitle',
+    templateId: 'circuitMap',
     teamId: 'lilas',
     palette: { ...teamById('lilas').palette },
     soft: 0,

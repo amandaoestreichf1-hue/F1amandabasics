@@ -1,83 +1,9 @@
 // A. Full-screen wipes. The screen is 100% covered around 50% of the duration — that's the cut point.
-import { paperPiece, tape, stamp, kerb, drawFitText, ransomText } from '../lib/paper.js';
+import { paperPiece, tape, kerb, drawFitText, ransomText } from '../lib/paper.js';
 import { carSticker, drawSticker } from '../lib/car.js';
 import { fontCss } from '../lib/fonts.js';
 import { rng } from '../lib/rng.js';
 import { jit, deg, ease, range, clamp } from './common.js';
-
-// ---------------------------------------------------------------------------
-// Newspaper strips headline wipe
-// ---------------------------------------------------------------------------
-export const newsWipe = {
-  id: 'newsWipe',
-  name: 'Manchete Wipe',
-  desc: 'Tiras de jornal rasgado cobrem a tela e abrem revelando a próxima cena.',
-  category: 'transition',
-  defaultDuration: 1.0,
-  cutPoint: 0.5,
-  fields: [
-    { key: 'h1', label: 'Manchete 1', type: 'text', default: 'RACE REPORT' },
-    { key: 'h2', label: 'Manchete 2', type: 'text', default: 'PADDOCK NEWS' },
-    { key: 'h3', label: 'Manchete 3', type: 'text', default: 'ÚLTIMA HORA' },
-    { key: 'strips', label: 'Nº de tiras', type: 'range', min: 4, max: 9, step: 1, default: 6 },
-    { key: 'mix', label: 'Papéis', type: 'select', options: [['team', 'Jornal + cores da equipe'], ['news', 'Só jornal'], ['team-only', 'Só cores da equipe']], default: 'team' },
-    { key: 'angle', label: 'Inclinação das tiras (°)', type: 'range', min: -12, max: 12, step: 1, default: -4 },
-    { key: 'stampOn', label: 'Carimbo no meio', type: 'toggle', default: true },
-    { key: 'stampText', label: 'Texto do carimbo', type: 'text', default: 'BREAKING' },
-    { key: 'mode', label: 'Movimento', type: 'select', options: [['full', 'Cobre e revela (corte no meio)'], ['in', 'Só cobrir'], ['out', 'Só revelar']], default: 'full' },
-  ],
-  render(rc) {
-    const { ctx, W, H, pal, P, t, dur } = rc;
-    const p = clamp(t / dur);
-    const n = P.strips | 0;
-    const ang = deg(P.angle);
-    // Strips must cover the rotated screen
-    const span = H / Math.cos(ang) + Math.abs(Math.tan(ang)) * W + 260;
-    const sh = span / n + 70;
-    const sw = W * 1.7;
-    const headlines = [P.h1, P.h2, P.h3].filter(Boolean);
-    const stagger = 0.24 / n;
-    const inLen = 0.22, outStart = 0.56;
-    const mid = Math.floor(n / 2);
-    ctx.save();
-    ctx.translate(W / 2, H / 2);
-    ctx.rotate(ang);
-    for (let i = 0; i < n; i++) {
-      const order = (i * 3) % n; // shuffled stagger, more collage-y
-      const d = order * stagger;
-      let inP = ease.outExpo(range(p, d, d + inLen));
-      let outP = ease.inOutExpo(range(p, outStart + d * 0.8, outStart + d * 0.8 + inLen + 0.04));
-      if (P.mode === 'in') { inP = ease.outExpo(range(p, d * 2, d * 2 + inLen * 2)); outP = 0; }
-      if (P.mode === 'out') { inP = 1; outP = ease.inOutExpo(range(p, d * 2, d * 2 + inLen * 2)); }
-      if (inP <= 0 || outP >= 1) continue;
-      const side = i % 2 ? 1 : -1;
-      const x = side * (1 - inP) * sw * 1.05 - side * outP * sw * 1.05;
-      const y = -span / 2 + (i + 0.5) * (span / n);
-      const j = jit(rc, i);
-      let color = pal.paper, tex = 'news', ink = pal.ink;
-      const kind = P.mix === 'news' ? 0 : P.mix === 'team-only' ? 1 + (i % 2) : [0, 1, 0, 2][i % 4];
-      if (kind === 1) { color = pal.paper2; tex = 'grain'; ink = pal.paper; }
-      if (kind === 2) { color = pal.accent; tex = 'grain'; ink = pal.paper; }
-      if (P.mix === 'team-only' && pal.paper2.toLowerCase() === pal.accent.toLowerCase()) {
-        if (kind === 2) { color = pal.accent2; ink = pal.ink; }
-      }
-      const headline = headlines.length && (i % 2 === 1 || i === mid) ? headlines[(i >> 1) % headlines.length] : null;
-      const r = rng(i * 31 + 5);
-      paperPiece(ctx, {
-        x: x + j.dx, y: y + j.dy, w: sw, h: sh, rot: (r() - 0.5) * 0.03 + j.dr, color, seed: 100 + i * 13, amp: 14, step: 22,
-        texture: tex, newsSeed: i % 4, shadow: rc.shadow, torn: { l: false, r: false },
-      }, (g, w, h) => {
-        if (!headline) return;
-        const tx = w / 2 + (r() - 0.5) * 240;
-        drawFitText(g, headline, { x: tx, y: h / 2 + 6, fontId: rc.fonts.head, size: h * 0.62, maxWidth: W * 0.92, color: ink });
-      });
-      if (P.stampOn && i === mid && P.stampText) {
-        stamp(ctx, { x: x + 170, y: y + sh * 0.2, text: P.stampText, color: pal.accent === pal.paper2 ? pal.accent2 : pal.accent, width: 470, rot: -0.14 - ang, progress: range(p, 0.28, 0.46), fontId: rc.fonts.head });
-      }
-    }
-    ctx.restore();
-  },
-};
 
 // ---------------------------------------------------------------------------
 // Car / PNG pass wipe

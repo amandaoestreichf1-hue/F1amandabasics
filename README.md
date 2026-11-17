@@ -21,10 +21,25 @@ Use **Chrome ou Edge no computador** (melhor suporte a WebCodecs, VP9 com alfa e
 
 ## O que tem
 
+**✎ Didático · pista & pneus**
+
+- **Circuito:** traçado real das 24 pistas do calendário 2026. O desenho vem de [bacinger/f1-circuits](https://github.com/bacinger/f1-circuits), licença MIT,
+  e começa na largada no sentido da corrida. Dá para mostrar:
+  - a pista se desenhando
+  - os setores coloridos, com um deles piscando
+  - as curvas numeradas uma a uma (contagem automática, que pode diferir da numeração oficial)
+  - uma curva em destaque com círculo, nota e zoom, escolhida pelo número ou pela posição exata na volta
+  - uma bolinha ou o seu PNG dando a volta
+
+  Os limites dos setores são ajustáveis, porque o padrão divide a volta em terços.
+- **Compostos de Pneu:**
+  - apresentação dos compostos com barras de aderência × durabilidade
+  - um composto em destaque com o desgaste caindo
+  - a estratégia de cada piloto, com stints e paradas (formato `NOR: M-22, H-35`)
+
 **✿ Do seu jeito · Lilás** (identidade padrão, tirada das suas edições: lilás `#c0b4fc`,
 xadrez lilás/linho com trama de tecido, papel quadriculado amassado, letra de mão em caixa alta):
 
-- **Título Lilás:** nome em lilás, linha bold pequena e palavra em script surgindo palavra por palavra.
 - **Xadrez Lilás:** transição com quadradinhos de tecido em cascata.
 - **Disclaimer / Nota:** título circulado à mão e texto em letra de mão.
 - **Cabecinhas & Pontos:** cabeças recortadas, "340 PTS" ou "PRECISA GANHAR TUDO", seta lilás e diferença.
