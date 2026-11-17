@@ -13,7 +13,28 @@ function makeCanvas() {
 
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
-export function download(blob, name) {
+// Inside a claude.ai Artifact the frame can't start downloads itself: offer the file through the
+// `downloads` capability (viewer confirms). Running locally (npm run dev), fall back to a normal link.
+let _dlCap;
+async function downloadsCap() {
+  if (!window.claude?.use) return null;
+  if (_dlCap === undefined) _dlCap = await window.claude.use('downloads').catch(() => null);
+  return _dlCap;
+}
+
+export async function download(blob, name) {
+  const cap = await downloadsCap();
+  if (cap) {
+    try {
+      await cap.save({ filename: name, data: blob });
+      return true;
+    } catch (e) {
+      if (e?.code === 'declined') return false;
+      if (e?.code === 'rate_limited') throw new Error('Já tem um download esperando confirmação.');
+      if (e?.code === 'too_large') throw new Error('Arquivo grande demais para baixar aqui.');
+      // other codes: fall through to a plain link
+    }
+  }
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -22,6 +43,7 @@ export function download(blob, name) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
+  return true;
 }
 
 export async function webmAlphaSupported() {

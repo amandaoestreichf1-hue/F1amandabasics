@@ -4,7 +4,13 @@ Ferramenta web local para criar **transições, cards e overlays de F1** no esti
 editorial / colagem de jornal (papel rasgado, fita crepe, carimbos, letras recortadas)
 para Reels e TikTok **9:16 (1080×1920)**, exportando com **fundo transparente**.
 
-## Rodar
+## Abrir
+
+A versão publicada fica em **https://claude.ai/artifact/SpF7eBvUNSn2rpfYEfXjDT**. Não precisa instalar nada.
+
+Para atualizar o link depois de mexer no código: `npm run build:artifact` gera `artifact/paddock-press.html`, que é republicado no mesmo endereço.
+
+## Rodar localmente
 
 ```bash
 npm install

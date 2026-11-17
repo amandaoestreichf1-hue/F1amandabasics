@@ -172,7 +172,7 @@ export default function App() {
   const deleteAsset = (id) => {
     setState((s) => ({ trinkets: s.trinkets.filter((t) => t.assetId !== id) }));
     const libId = assetsRef.current[id]?.libId;
-    if (libId && window.confirm('Apagar este trinket do seu acervo?')) library.removeImage(libId);
+    if (libId) library.removeImage(libId);
   };
 
   // keyboard: delete selected trinket, space play handled in preview
@@ -351,16 +351,13 @@ function ExportPanel({ state, assets, fps, setFps, notify, timeRef }) {
     try {
       if (kind === 'webm') {
         const blob = await exportWebM(state, assets, { fps, onProgress, signal: ac.signal });
-        download(blob, `${base}_${fps}fps_alpha.webm`);
-        notify(`WebM exportado (${(blob.size / 1e6).toFixed(1)} MB) ✓`);
+        if (await download(blob, `${base}_${fps}fps_alpha.webm`)) notify(`WebM exportado (${(blob.size / 1e6).toFixed(1)} MB) ✓`);
       } else if (kind === 'png') {
         const blob = await exportPNGZip(state, assets, { fps, onProgress, signal: ac.signal, baseName: base });
-        download(blob, `${base}_${fps}fps_png.zip`);
-        notify(`ZIP com ${frames} PNGs exportado ✓`);
+        if (await download(blob, `${base}_${fps}fps_png.zip`)) notify(`ZIP com ${frames} PNGs exportado ✓`);
       } else {
         const blob = await exportStillPNG(state, assets, Math.min(timeRef.current, state.duration));
-        download(blob, `${base}_quadro.png`);
-        notify('Quadro PNG exportado ✓');
+        if (await download(blob, `${base}_quadro.png`)) notify('Quadro PNG exportado ✓');
       }
     } catch (e) {
       if (e.name === 'AbortError') notify('Exportação cancelada.', 'err');

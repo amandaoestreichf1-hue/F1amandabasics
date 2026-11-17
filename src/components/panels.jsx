@@ -210,6 +210,7 @@ export function FieldsPanel({ tpl, P, set, assets, onUpload }) {
 // ---------------------------------------------------------------------------
 export function TrinketPanel({ assets, trinkets, selected, onUpload, onAdd, onSelect, onUpdate, onRemove, onMove, onDeleteAsset, onAutoCollage, onClear }) {
   const [autoN, setAutoN] = React.useState(5);
+  const [armed, setArmed] = React.useState(null);
   const gallery = Object.entries(assets).filter(([, a]) => a.kind === 'trinket' || a.kind === 'native').sort((x, y) => (x[1].kind === 'native') - (y[1].kind === 'native'));
   const sel = trinkets.find((t) => t.id === selected);
   return (
@@ -233,7 +234,12 @@ export function TrinketPanel({ assets, trinkets, selected, onUpload, onAdd, onSe
               <img src={a.url} alt={a.name} className="max-w-full max-h-full object-contain" />
             </button>
             {a.kind === 'trinket' && (
-              <button onClick={() => onDeleteAsset(id)} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-desk-950 border border-desk-600 text-[10px] text-stone-300 hidden group-hover:grid place-items-center">✕</button>
+              <button
+                onClick={() => (armed === id ? (onDeleteAsset(id), setArmed(null)) : setArmed(id))}
+                onMouseLeave={() => armed === id && setArmed(null)}
+                title="Apagar do acervo"
+                className={`absolute -top-1.5 -right-1.5 h-5 rounded-full border text-[10px] place-items-center ${armed === id ? 'grid px-1.5 bg-red-500 border-red-400 text-white' : 'hidden group-hover:grid w-5 bg-desk-950 border-desk-600 text-stone-300'}`}
+              >{armed === id ? 'apagar?' : '✕'}</button>
             )}
           </motion.div>
         ))}

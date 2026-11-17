@@ -43,6 +43,7 @@ export default function Library({ library, fontsState, notify, onUseImage }) {
   const [cat, setCat] = useState('all');
   const [dropCat, setDropCat] = useState('trinket');
   const [busy, setBusy] = useState(false);
+  const [armed, setArmed] = useState(null);
   const counts = useMemo(() => Object.fromEntries(IMAGE_CATEGORIES.map((c) => [c.id, images.filter((i) => i.category === c.id).length])), [images]);
   const shown = cat === 'all' ? images : images.filter((i) => i.category === cat);
   const [lastBackup, setLastBackup] = useState(() => {
@@ -52,7 +53,8 @@ export default function Library({ library, fontsState, notify, onUseImage }) {
   const needsBackup = signature > 0 && (!lastBackup || lastBackup.count !== signature);
   const doBackup = async () => {
     const blob = await exportBackup();
-    download(blob, `acervo-paddock-press-${new Date().toISOString().slice(0, 10)}.zip`);
+    const ok = await download(blob, `acervo-paddock-press-${new Date().toISOString().slice(0, 10)}.zip`).catch((e) => { notify(e.message, 'err'); return false; });
+    if (!ok) return;
     const info = { at: Date.now(), count: signature };
     try { localStorage.setItem('acervo-last-backup', JSON.stringify(info)); } catch { /* ignore */ }
     setLastBackup(info);
@@ -176,10 +178,11 @@ export default function Library({ library, fontsState, notify, onUseImage }) {
                     <div className="relative aspect-square checker grid place-items-center p-2">
                       <img src={im.url} alt={im.name} className="max-w-full max-h-full object-contain" />
                       <button
-                        onClick={() => removeImage(im.id)}
+                        onClick={() => (armed === im.id ? (removeImage(im.id), setArmed(null)) : setArmed(im.id))}
+                        onMouseLeave={() => armed === im.id && setArmed(null)}
                         title="Apagar do acervo"
-                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-desk-950/90 text-stone-300 text-xs hidden group-hover:grid place-items-center hover:text-red-400"
-                      >✕</button>
+                        className={`absolute top-1.5 right-1.5 h-6 rounded-full text-xs place-items-center ${armed === im.id ? 'grid px-2 bg-red-500 text-white' : 'hidden group-hover:grid w-6 bg-desk-950/90 text-stone-300 hover:text-red-400'}`}
+                      >{armed === im.id ? 'apagar?' : '✕'}</button>
                       {onUseImage && (
                         <button
                           onClick={() => onUseImage(im)}
@@ -248,7 +251,7 @@ export default function Library({ library, fontsState, notify, onUseImage }) {
                   <div className="w-full sm:w-auto sm:min-w-96">
                     <Segmented value={f.role} onChange={(v) => setFontRole(f.id, v)} options={FONT_ROLES.map((r) => [r.id, r.label])} />
                   </div>
-                  <Btn variant="danger" onClick={() => removeFont(f.id)}>Apagar</Btn>
+                  <Btn variant="danger" onClick={() => (armed === f.id ? (removeFont(f.id), setArmed(null)) : setArmed(f.id))}>{armed === f.id ? 'Confirmar' : 'Apagar'}</Btn>
                 </motion.div>
               );
             })}
