@@ -31,19 +31,23 @@ export function fontCss(id, size) {
   return `${f.style} ${f.weight} ${Math.round(size)}px ${f.family}, "Anton", sans-serif`;
 }
 
-export async function loadCustomFont(file) {
-  const base = file.name.replace(/\.(ttf|otf|woff2?|TTF|OTF|WOFF2?)$/, '');
-  const familyName = `Custom_${base.replace(/[^a-zA-Z0-9]/g, '_')}`;
-  const buf = await file.arrayBuffer();
+// Register a font file (from upload or from the Acervo) under a stable id.
+export async function registerFont(blobOrFile, name, id) {
+  const familyName = 'Lib_' + id.replace(/[^a-zA-Z0-9]/g, '_');
+  const buf = await blobOrFile.arrayBuffer();
   const face = new FontFace(familyName, buf);
   await face.load();
   document.fonts.add(face);
-  const id = `custom:${familyName}`;
-  const existing = custom.findIndex((c) => c.id === id);
-  const entry = { id, label: `${base} (sua fonte)`, family: `"${familyName}"`, weight: 'normal', style: 'normal', custom: true };
-  if (existing >= 0) custom[existing] = entry;
+  const entry = { id, label: `${name} (sua fonte)`, family: `"${familyName}"`, weight: 'normal', style: 'normal', custom: true };
+  const i = custom.findIndex((c) => c.id === id);
+  if (i >= 0) custom[i] = entry;
   else custom.unshift(entry);
   return entry;
+}
+
+export function unregisterFont(id) {
+  const i = custom.findIndex((c) => c.id === id);
+  if (i >= 0) custom.splice(i, 1);
 }
 
 export async function ensureBuiltinFonts() {

@@ -23,7 +23,7 @@ export function TemplatePicker({ value, onChange }) {
                   onClick={() => onChange(t.id)}
                   className={`text-left p-2.5 rounded-sm border transition-colors ${
                     active
-                      ? 'bg-newsprint text-desk-950 border-newsprint shadow-[4px_4px_0_#ff3b2f]'
+                      ? 'bg-newsprint text-desk-950 border-newsprint shadow-[4px_4px_0_#8b74e0]'
                       : 'bg-desk-800 border-desk-700 hover:border-desk-600 text-stone-200'
                   }`}
                 >
@@ -87,24 +87,50 @@ export function TeamPanel({ teamId, palette, onTeam, onPalette, soft, onSoft }) 
 }
 
 // ---------------------------------------------------------------------------
-export function TypePanel({ fonts, onFonts, onUploadFont, fontVersion }) {
+export function TypePanel({ fonts, onFonts, onUploadFont, fontVersion, onOpenLibrary }) {
   const opts = allFonts().map((f) => [f.id, f.label]);
   return (
     <Section title="Tipografia" kicker="03">
       <FileButton accept=".ttf,.otf,.woff,.woff2" onFiles={(fs) => onUploadFont(fs[0])} variant="paper" className="w-full">
-        ⬆ Upload de fonte customizada (.ttf / .otf / .woff)
+        ⬆ Subir fonte (.ttf / .otf / .woff) como Título
       </FileButton>
-      <div className="text-[11px] text-stone-500 -mt-1">Ex.: sua <b className="text-stone-300">Bootzy TM</b>. Ela vira a fonte de título automaticamente.</div>
-      <Select key={'h' + fontVersion} label="Fonte dos títulos / manchetes" value={fonts.head} options={opts} onChange={(v) => onFonts({ ...fonts, head: v })} />
-      <Select key={'b' + fontVersion} label="Fonte dos subtítulos" value={fonts.body} options={opts} onChange={(v) => onFonts({ ...fonts, body: v })} />
+      <div className="text-[11px] text-stone-500 -mt-1">
+        Fica salva no <button className="text-[#c0b4fc] underline" onClick={onOpenLibrary}>Acervo</button>, onde você escolhe o papel de cada fonte (ex.: <b className="text-stone-300">Bootzy</b> = Título).
+      </div>
+      <Select key={'h' + fontVersion} label="Título / headline" value={fonts.head} options={opts} onChange={(v) => onFonts({ ...fonts, head: v })} />
+      <Select key={'b' + fontVersion} label="Subtítulo / textos de apoio" value={fonts.body} options={opts} onChange={(v) => onFonts({ ...fonts, body: v })} />
+      <Select key={'a' + fontVersion} label="Destaque (script)" value={fonts.accent || 'Script'} options={opts} onChange={(v) => onFonts({ ...fonts, accent: v })} />
     </Section>
   );
 }
 
 // ---------------------------------------------------------------------------
+const SLOT_CATS = { photo: ['photo', 'object', 'trinket'], object: ['object', 'photo', 'trinket'], background: ['background'] };
+
+function LibraryStrip({ assets, cats, value, onPick }) {
+  const items = Object.entries(assets).filter(([, a]) => cats.includes(a.kind)).sort((x, y) => cats.indexOf(x[1].kind) - cats.indexOf(y[1].kind));
+  if (!items.length) return <div className="text-[11px] text-stone-500">Seu acervo ainda não tem imagens dessa categoria.</div>;
+  return (
+    <div className="flex gap-1.5 overflow-x-auto scroll-thin pb-1">
+      {items.map(([id, a]) => (
+        <motion.button
+          key={id}
+          whileTap={{ scale: 0.9 }}
+          title={a.name}
+          onClick={() => onPick(id)}
+          className={`shrink-0 w-12 h-12 rounded checker grid place-items-center overflow-hidden border ${value === id ? 'border-[#c0b4fc] ring-2 ring-[#c0b4fc]/50' : 'border-desk-700 hover:border-desk-600'}`}
+        >
+          <img src={a.url} className="max-w-full max-h-full object-contain" alt="" />
+        </motion.button>
+      ))}
+    </div>
+  );
+}
+
 function ImageSlot({ field, P, set, assets, onUpload }) {
   const k = field.key;
   const asset = P[k] ? assets[P[k]] : null;
+  const libCat = field.libCategory || 'photo';
   const frames = field.frames === false ? null : [['polaroid', 'Polaroid'], ['torn', 'Recorte rasgado'], ['cutout', 'PNG solto']];
   return (
     <div className="rounded-md border border-dashed border-desk-600 p-3 space-y-2.5 bg-desk-900/60">
@@ -114,12 +140,14 @@ function ImageSlot({ field, P, set, assets, onUpload }) {
           {asset ? <img src={asset.url} className="max-w-full max-h-full object-contain" alt="" /> : <span className="text-[10px] text-stone-500">vazio</span>}
         </div>
         <div className="flex flex-col gap-1.5 flex-1">
-          <FileButton accept="image/*" onFiles={(fs) => onUpload(fs[0], 'photo').then((id) => set({ [k]: id }))}>
+          <FileButton accept="image/*" onFiles={(fs) => onUpload(fs[0], libCat).then((id) => set({ [k]: id })).catch(() => {})}>
             {asset ? 'Trocar imagem' : 'Upload foto / PNG'}
           </FileButton>
           {asset && <Btn variant="danger" onClick={() => set({ [k]: null })}>Remover</Btn>}
         </div>
       </div>
+      <div className="text-[10px] uppercase tracking-wider text-stone-500">Do meu acervo</div>
+      <LibraryStrip assets={assets} cats={SLOT_CATS[libCat] || [libCat]} value={P[k]} onPick={(id) => set({ [k]: id })} />
       {frames && <Segmented value={P[k + 'Frame']} onChange={(v) => set({ [k + 'Frame']: v })} options={frames} />}
       {asset && (
         <div className="grid grid-cols-2 gap-x-3 gap-y-1">
@@ -180,14 +208,23 @@ export function FieldsPanel({ tpl, P, set, assets, onUpload }) {
 }
 
 // ---------------------------------------------------------------------------
-export function TrinketPanel({ assets, trinkets, selected, onUpload, onAdd, onSelect, onUpdate, onRemove, onMove, onDeleteAsset }) {
-  const gallery = Object.entries(assets).filter(([, a]) => a.kind === 'trinket' || a.kind === 'native');
+export function TrinketPanel({ assets, trinkets, selected, onUpload, onAdd, onSelect, onUpdate, onRemove, onMove, onDeleteAsset, onAutoCollage, onClear }) {
+  const [autoN, setAutoN] = React.useState(5);
+  const gallery = Object.entries(assets).filter(([, a]) => a.kind === 'trinket' || a.kind === 'native').sort((x, y) => (x[1].kind === 'native') - (y[1].kind === 'native'));
   const sel = trinkets.find((t) => t.id === selected);
   return (
     <Section title="Gaveta de trinkets" kicker="05" right={<span className="font-mono text-[11px] text-stone-500 mr-2">{trinkets.length} na tela</span>}>
       <FileButton accept="image/png,image/webp,image/gif,image/*" multiple onFiles={(fs) => fs.forEach((f) => onUpload(f, 'trinket'))} variant="paper" className="w-full">
-        ⬆ Subir PNGs transparentes (vários)
+        ⬆ Subir PNGs (vão pro acervo como trinket)
       </FileButton>
+      <div className="rounded-md border border-[#c0b4fc]/40 bg-[#c0b4fc]/5 p-3 space-y-2">
+        <div className="text-[12px] text-newsprint font-semibold">✨ Auto-colagem com meu acervo</div>
+        <Slider label="Quantos trinkets" value={autoN} min={2} max={10} step={1} onChange={setAutoN} />
+        <div className="flex gap-2">
+          <Btn variant="primary" className="flex-1" onClick={() => onAutoCollage(autoN)}>Espalhar / embaralhar</Btn>
+          {trinkets.length > 0 && <Btn variant="danger" onClick={onClear}>Limpar</Btn>}
+        </div>
+      </div>
       <div className="text-[11px] text-stone-500">Clique num trinket para colocar na tela. Arraste no preview para posicionar · roda do mouse = tamanho · Shift + roda = girar.</div>
       <div className="grid grid-cols-4 gap-1.5">
         {gallery.map(([id, a]) => (
@@ -224,7 +261,10 @@ export function TrinketPanel({ assets, trinkets, selected, onUpload, onAdd, onSe
             <Slider label="X" value={Math.round(sel.x)} min={-100} max={1180} step={1} onChange={(v) => onUpdate(sel.id, { x: v })} />
             <Slider label="Y" value={Math.round(sel.y)} min={-100} max={2020} step={1} onChange={(v) => onUpdate(sel.id, { y: v })} />
             <Slider label="Entra em" value={sel.delay} min={0} max={3} step={0.01} fmt={(v) => v.toFixed(2) + 's'} onChange={(v) => onUpdate(sel.id, { delay: v })} />
-            <Select label="Animação" value={sel.anim} onChange={(v) => onUpdate(sel.id, { anim: v })} options={[['pop', 'Pop (mola)'], ['slam', 'Carimbo (slam)'], ['none', 'Parado']]} />
+            <Select label="Entrada" value={sel.anim} onChange={(v) => onUpdate(sel.id, { anim: v })} options={[['pop', 'Pop (mola)'], ['slam', 'Carimbo (slam)'], ['drop', 'Cai de cima'], ['spin', 'Gira entrando'], ['none', 'Sem entrada']]} />
+            <div className="col-span-2">
+              <Select label="Enquanto está na tela" value={sel.idle || 'none'} onChange={(v) => onUpdate(sel.id, { idle: v })} options={[['float', 'Flutuar'], ['wiggle', 'Balançar'], ['pulse', 'Pulsar'], ['spin', 'Girar devagar'], ['none', 'Parado']]} />
+            </div>
           </div>
           <Toggle label="Espelhar" value={sel.flip} onChange={(v) => onUpdate(sel.id, { flip: v })} />
           <Toggle label="Sombra seca" value={sel.shadow} onChange={(v) => onUpdate(sel.id, { shadow: v })} />

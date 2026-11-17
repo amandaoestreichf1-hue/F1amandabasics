@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function Section({ title, kicker, children, defaultOpen = true, right }) {
@@ -118,7 +118,7 @@ export function ColorInput({ label, value, onChange }) {
 
 export function Btn({ children, onClick, variant = 'ghost', className = '', disabled, title }) {
   const v = {
-    primary: 'bg-marker text-white hover:bg-[#ff5247] shadow-[3px_3px_0_#000]',
+    primary: 'bg-marker text-white hover:bg-[#9c88ea] shadow-[3px_3px_0_#000]',
     paper: 'bg-newsprint text-desk-950 hover:bg-white shadow-[3px_3px_0_#000]',
     ghost: 'bg-desk-800 text-stone-200 hover:bg-desk-700 border border-desk-700',
     danger: 'bg-transparent text-red-400 hover:bg-red-500/10 border border-red-500/30',
@@ -159,6 +159,7 @@ export function FileButton({ accept, multiple, onFiles, children, variant = 'gho
 }
 
 export function Segmented({ value, onChange, options }) {
+  const uidSeg = useId();
   return (
     <div className="flex bg-desk-800 border border-desk-700 rounded-md p-0.5">
       {options.map(([v, l]) => (
@@ -168,7 +169,7 @@ export function Segmented({ value, onChange, options }) {
           onClick={() => onChange(v)}
           className={`relative flex-1 px-2 py-1.5 text-[12px] font-semibold rounded ${value === v ? 'text-white' : 'text-stone-400 hover:text-stone-200'}`}
         >
-          {value === v && <motion.span layoutId={'seg-' + options.map((o) => o[0]).join('')} className="absolute inset-0 bg-marker rounded" transition={{ type: 'spring', stiffness: 600, damping: 40 }} />}
+          {value === v && <motion.span layoutId={'seg-' + uidSeg} className="absolute inset-0 bg-marker rounded" transition={{ type: 'spring', stiffness: 600, damping: 40 }} />}
           <span className="relative">{l}</span>
         </button>
       ))}

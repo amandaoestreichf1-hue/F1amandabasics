@@ -45,6 +45,17 @@ Os demais templates aparecem abaixo. Todos usam a paleta Lilás por padrão; ao 
 - **Sombra seca** configurável.
 - **Fundo de teste** no preview (não é exportado).
 
+## Meu acervo
+
+Na aba **✿ Meu acervo** você sobe suas imagens e fontes. Elas ficam salvas no navegador (IndexedDB), então não somem quando você fecha a página.
+
+- **Categorias de imagem:** Trinkets, Fundos, Cabecinhas & Fotos, Objetos que cruzam. Dá para trocar a categoria depois.
+- **Fontes:** cada uma tem um papel, Título, Subtítulo ou Destaque. Por exemplo, a Bootzy como Título passa a ser usada em todas as manchetes.
+- **No editor:** os espaços de foto mostram as imagens do acervo, os templates Lilás aceitam "Imagem do meu acervo" como fundo,
+  o Xadrez pode virar mosaico de uma imagem, e a **✨ Auto-colagem** espalha seus trinkets pelas bordas com animação.
+- **Animação contínua:** todo trinket tem entrada (pop, carimbo, cai, gira) e movimento enquanto está na tela (flutuar, balançar, pulsar, girar).
+- **Backup:** baixe o acervo em .zip para guardar no Drive ou levar para outro computador, e restaure por lá.
+
 ## Exportação
 
 - **`.webm` VP9 + Alpha.** Usa WebCodecs quadro a quadro quando o navegador suporta codificar alfa. Se não suportar, grava com MediaRecorder em tempo real (o alfa continua no arquivo).

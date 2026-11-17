@@ -66,14 +66,21 @@ export function renderFrame(ctx, state, assets, time, { editor = false } = {}) {
   state.trinkets.forEach((tr, i) => {
     const img = assets[tr.assetId]?.img;
     if (!img) return;
-    let s = 1, rotExtra = 0;
-    if (tr.anim !== 'none') {
-      const d0 = (tr.delay ?? 0.12) + 0;
-      const k = range(t, d0, d0 + (tr.anim === 'slam' ? 0.16 : 0.22));
-      s = tr.anim === 'slam' ? (k <= 0 ? 0 : 1 + (1 - ease.slam(k)) * 0.9) : ease.outBack(k, 2.2);
-      rotExtra = (1 - Math.min(1, k)) * 0.5;
-      if (tr.anim === 'slam' && k <= 0) s = 0;
+    let s = 1, rotExtra = 0, dyExtra = 0, alpha = 1;
+    if (tr.anim && tr.anim !== 'none') {
+      const d0 = tr.delay ?? 0.12;
+      const k = range(t, d0, d0 + (tr.anim === 'slam' ? 0.16 : tr.anim === 'drop' ? 0.3 : 0.24));
+      if (tr.anim === 'slam') s = k <= 0 ? 0 : 1 + (1 - ease.slam(k)) * 0.9;
+      else if (tr.anim === 'drop') { s = k <= 0 ? 0 : 1; dyExtra = -(1 - ease.outBack(k, 1.6)) * 500; alpha = Math.min(1, k * 4); }
+      else if (tr.anim === 'spin') { s = ease.outBack(k, 1.6); rotExtra = (1 - ease.outCubic(k)) * Math.PI * 1.2; }
+      else { s = ease.outBack(k, 2.2); rotExtra = (1 - Math.min(1, k)) * 0.5; }
     }
+    // idle motion while on screen, so nothing sits dead still
+    const ph = i * 1.7;
+    if (tr.idle === 'float') dyExtra += Math.sin(t * 2.4 + ph) * 12;
+    else if (tr.idle === 'wiggle') rotExtra += Math.sin(t * 3.2 + ph) * 0.09;
+    else if (tr.idle === 'pulse') s *= 1 + Math.sin(t * 4 + ph) * 0.05;
+    else if (tr.idle === 'spin') rotExtra += t * 0.8;
     if (tr.exit) s *= 1 - ease.inBack(range(t, dur - 0.2, dur), 2);
     if (s <= 0.001) return;
     let jx = 0, jy = 0, jr = 0;
@@ -82,7 +89,7 @@ export function renderFrame(ctx, state, assets, time, { editor = false } = {}) {
       jx = (r() - 0.5) * 5; jy = (r() - 0.5) * 5; jr = (r() - 0.5) * 0.03;
     }
     drawSticker(ctx, img, {
-      x: tr.x + jx, y: tr.y + jy, w: tr.w * tr.scale * s,
+      x: tr.x + jx, y: tr.y + jy + dyExtra, w: tr.w * tr.scale * s, alpha,
       rot: (tr.rot * Math.PI) / 180 + rotExtra + jr, flip: tr.flip,
       shadow: tr.shadow && rc.shadow ? rc.shadow : null,
     });

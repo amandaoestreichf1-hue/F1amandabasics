@@ -91,7 +91,7 @@ export const carWipe = {
   cutPoint: 0.55,
   fields: [
     { key: 'carMode', label: 'Objeto', type: 'select', options: [['native', 'Carrinho ilustrado (cor da equipe)'], ['png', 'Meu PNG (carro, capacete, objeto)']], default: 'native' },
-    { key: 'carPng', label: 'PNG que cruza a tela', type: 'image', frames: false, showIf: (P) => P.carMode === 'png' },
+    { key: 'carPng', label: 'PNG que cruza a tela', type: 'image', frames: false, libCategory: 'object', showIf: (P) => P.carMode === 'png' },
     { key: 'carFlip', label: 'Espelhar PNG', type: 'toggle', default: false, showIf: (P) => P.carMode === 'png' },
     { key: 'carNumber', label: 'Número do carro', type: 'text', default: '4', showIf: (P) => P.carMode === 'native' },
     { key: 'dir', label: 'Direção', type: 'select', options: [['ltr', 'Esquerda → Direita'], ['rtl', 'Direita → Esquerda']], default: 'ltr' },

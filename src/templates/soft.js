@@ -1,21 +1,27 @@
 // "Lilás" family: templates modeled on the creator's own edits — lilac handwritten titles,
 // lilac/linen gingham, crumpled graph paper, floating cut-out heads, hand-drawn circles & arrows.
-import { setFont, graphLines, crumpleTexture, weaveOver, handCircle, handArrow, photoSlot, wrapLines } from '../lib/paper.js';
+import { setFont, graphLines, crumpleTexture, weaveOver, handCircle, handArrow, photoSlot, wrapLines, drawImageCover } from '../lib/paper.js';
 import { rng } from '../lib/rng.js';
 import { slot, ease, range, clamp } from './common.js';
 
 // ---------------------------------------------------------------------------
 // Shared helpers
 // ---------------------------------------------------------------------------
-export function sceneBg(rc, kind, { enter = 'cut', inLen = 0.28, outLen = 0.22 } = {}) {
+export function sceneBg(rc, kind, { enter = 'zoom', inLen = 0.3, outLen = 0.22 } = {}) {
   if (!kind || kind === 'none') return;
   const { ctx, W, H, pal, t, dur } = rc;
-  let dy = 0;
-  if (enter === 'slide') {
-    dy = (1 - ease.outExpo(range(t, 0, inLen))) * H - ease.inCubic(range(t, dur - outLen, dur)) * H;
-  }
+  const kin = range(t, 0, inLen), kout = range(t, dur - outLen, dur);
   ctx.save();
-  ctx.translate(0, dy);
+  if (enter === 'slide') {
+    ctx.translate(0, (1 - ease.outExpo(kin)) * H - ease.inCubic(kout) * H);
+  } else if (enter === 'zoom') {
+    // soft "breathing" zoom in + fade, then a gentle drift while on screen
+    const sc = 1.12 - 0.12 * ease.outCubic(kin) + 0.03 * range(t, 0, dur) + 0.04 * ease.inCubic(kout);
+    ctx.globalAlpha *= ease.outCubic(kin) * (1 - ease.inCubic(kout));
+    ctx.translate(W / 2, H / 2);
+    ctx.scale(sc, sc);
+    ctx.translate(-W / 2, -H / 2);
+  }
   if (kind === 'graph') {
     ctx.fillStyle = pal.paper;
     ctx.fillRect(0, 0, W, H);
@@ -24,6 +30,13 @@ export function sceneBg(rc, kind, { enter = 'cut', inLen = 0.28, outLen = 0.22 }
     ctx.drawImage(cr, -120, -150);
   } else if (kind === 'gingham') {
     gingham(ctx, 0, 0, W, H, { size: 150, c1: pal.paper2, c2: pal.linen });
+  } else if (kind === 'image') {
+    const s = slot(rc, 'bgImage');
+    if (s.img) drawImageCover(ctx, s.img, W, H, { zoom: s.zoom, offX: s.offX, offY: s.offY, rot: s.imgRot });
+    else {
+      ctx.fillStyle = pal.paper;
+      ctx.fillRect(0, 0, W, H);
+    }
   }
   ctx.restore();
 }
@@ -99,10 +112,11 @@ export function revealText(ctx, text, { x, y, fontId, size, color, align = 'cent
   return lines.length * lh;
 }
 
-const bgField = (def = 'graph') => ({ key: 'bg', label: 'Fundo', type: 'select', options: [['graph', 'Papel quadriculado amassado'], ['gingham', 'Xadrez lilás (tecido)'], ['none', 'Sem fundo (por cima do vídeo)']], default: def, group: 'Fundo' });
-const bgEnterField = { key: 'bgEnter', label: 'Entrada do fundo', type: 'select', options: [['cut', 'Corte seco'], ['slide', 'Desliza de baixo']], default: 'cut', group: 'Fundo', showIf: (P) => P.bg !== 'none' };
-const fontOpts = [['head', 'Fonte dos títulos (Bootzy/sua)'], ['Hand', 'Letra de mão'], ['Script', 'Script'], ['Marker', 'Marcador'], ['Rounded', 'Bold largo'], ['PlayfairItalic', 'Serifada itálica'], ['Courier', 'Máquina de escrever']];
-const pickFont = (rc, v) => (v === 'head' ? rc.fonts.head : v === 'body' ? rc.fonts.body : v);
+const bgField = (def = 'graph') => ({ key: 'bg', label: 'Fundo', type: 'select', options: [['graph', 'Papel quadriculado amassado'], ['gingham', 'Xadrez lilás (tecido)'], ['image', 'Imagem do meu acervo'], ['none', 'Sem fundo (por cima do vídeo)']], default: def, group: 'Fundo' });
+const bgImageField = { key: 'bgImage', label: 'Imagem de fundo', type: 'image', libCategory: 'background', frames: false, group: 'Fundo', showIf: (P) => P.bg === 'image' };
+const bgEnterField = { key: 'bgEnter', label: 'Animação do fundo', type: 'select', options: [['zoom', 'Zoom suave + fade'], ['slide', 'Desliza de baixo'], ['cut', 'Corte seco']], default: 'zoom', group: 'Fundo', showIf: (P) => P.bg !== 'none' };
+const fontOpts = [['head', 'Título (do Acervo/Tipografia)'], ['body', 'Subtítulo (do Acervo/Tipografia)'], ['accent', 'Destaque (do Acervo/Tipografia)'], ['Hand', 'Letra de mão'], ['Script', 'Script'], ['Marker', 'Marcador'], ['Rounded', 'Bold largo'], ['PlayfairItalic', 'Serifada itálica'], ['Courier', 'Máquina de escrever']];
+const pickFont = (rc, v) => (v === 'head' ? rc.fonts.head : v === 'body' ? rc.fonts.body : v === 'accent' ? rc.fonts.accent || 'Script' : v);
 const legibility = (P) => (P.glow ? 'rgba(40,24,64,0.45)' : null);
 
 // ---------------------------------------------------------------------------
@@ -118,7 +132,7 @@ export const lilacTitle = {
     { key: 'l3', label: 'Linha 3 (script)', type: 'text', default: 'campeão' },
     { key: 'f1', label: 'Fonte linha 1', type: 'select', options: fontOpts, default: 'head', group: 'Estilo' },
     { key: 'f2', label: 'Fonte linha 2', type: 'select', options: fontOpts, default: 'Rounded', group: 'Estilo' },
-    { key: 'f3', label: 'Fonte linha 3', type: 'select', options: fontOpts, default: 'Script', group: 'Estilo' },
+    { key: 'f3', label: 'Fonte linha 3', type: 'select', options: fontOpts, default: 'accent', group: 'Estilo' },
     { key: 'c1', label: 'Cor linha 1', type: 'color', default: '#c0b4fc', group: 'Estilo' },
     { key: 'c2', label: 'Cor linha 2', type: 'color', default: '#ffffff', group: 'Estilo' },
     { key: 'c3', label: 'Cor linha 3', type: 'color', default: '#ffffff', group: 'Estilo' },
@@ -127,6 +141,9 @@ export const lilacTitle = {
     { key: 's3', label: 'Tamanho linha 3', type: 'range', min: 60, max: 280, step: 2, default: 170, group: 'Estilo' },
     { key: 'mode', label: 'Aparecer', type: 'select', options: [['word', 'Palavra por palavra'], ['letter', 'Letra por letra (digitando)']], default: 'word' },
     { key: 'glow', label: 'Sombrinha p/ leitura no vídeo', type: 'toggle', default: true },
+    { ...bgField('none') },
+    bgImageField,
+    bgEnterField,
     { key: 'posY', label: 'Posição vertical', type: 'range', min: 0.15, max: 0.85, step: 0.01, default: 0.56, group: 'Layout' },
     { key: 'scale', label: 'Escala', type: 'range', min: 0.5, max: 1.4, step: 0.01, default: 1, group: 'Layout' },
   ],
@@ -134,6 +151,7 @@ export const lilacTitle = {
     const { ctx, W, H, P, t, dur } = rc;
     const cy = H * P.posY;
     const out = range(t, dur - 0.22, dur);
+    sceneBg(rc, P.bg, { enter: P.bgEnter });
     if (out >= 1) return;
     ctx.save();
     ctx.translate(W / 2, cy);
@@ -168,6 +186,8 @@ export const checkerWipe = {
     { key: 'text', label: 'Texto no meio (opcional)', type: 'text', default: '' },
     { key: 'textFont', label: 'Fonte do texto', type: 'select', options: fontOpts, default: 'head' },
     { key: 'textColor', label: 'Cor do texto', type: 'color', default: '#ffffff' },
+    { key: 'fill', label: 'Preenchimento', type: 'select', options: [['checker', 'Xadrez lilás/linho'], ['image', 'Imagem do meu acervo (mosaico)']], default: 'checker' },
+    { key: 'tileImage', label: 'Imagem dos quadrados', type: 'image', libCategory: 'background', frames: false, showIf: (P) => P.fill === 'image' },
     { key: 'weave', label: 'Textura de tecido', type: 'toggle', default: true },
     { key: 'mode', label: 'Movimento', type: 'select', options: [['full', 'Cobre e revela (corte no meio)'], ['in', 'Só cobrir'], ['out', 'Só revelar']], default: 'full' },
   ],
@@ -203,6 +223,12 @@ export const checkerWipe = {
       ctx.fillRect(-size / 2 - 0.6, -size / 2 - 0.6, size + 1.2, size + 1.2);
       ctx.restore();
     }
+    const ti = P.fill === 'image' ? slot(rc, 'tileImage') : null;
+    if (ti?.img) {
+      ctx.globalCompositeOperation = 'source-atop';
+      drawImageCover(ctx, ti.img, W, H, { zoom: ti.zoom, offX: ti.offX, offY: ti.offY, rot: ti.imgRot });
+      ctx.globalCompositeOperation = 'source-over';
+    }
     if (P.weave) {
       ctx.globalCompositeOperation = 'source-atop';
       weaveOver(ctx, W, H, 0.45);
@@ -236,6 +262,7 @@ export const disclaimer = {
     { key: 'titleSize', label: 'Tamanho do título', type: 'range', min: 60, max: 200, step: 2, default: 110, group: 'Estilo' },
     { key: 'textSize', label: 'Tamanho do texto', type: 'range', min: 30, max: 110, step: 2, default: 56, group: 'Estilo' },
     bgField('graph'),
+    bgImageField,
     bgEnterField,
     { key: 'posY', label: 'Posição vertical', type: 'range', min: 0.12, max: 0.8, step: 0.01, default: 0.32, group: 'Layout' },
   ],
@@ -246,7 +273,7 @@ export const disclaimer = {
     if (out >= 1) return;
     const cy = H * P.posY;
     const tf = pickFont(rc, P.titleFont);
-    const tStart = P.bg !== 'none' && P.bgEnter === 'slide' ? 0.25 : 0.08;
+    const tStart = P.bg !== 'none' && P.bgEnter !== 'cut' ? 0.25 : 0.08;
     revealText(ctx, P.title, { x: W / 2, y: cy, fontId: tf, size: P.titleSize, color: P.titleColor, start: tStart, per: 0.1, t, out });
     if (P.circle) {
       setFont(ctx, tf, P.titleSize);
@@ -282,6 +309,7 @@ export const pointsCompare = {
     { key: 'size', label: 'Tamanho do texto', type: 'range', min: 40, max: 150, step: 2, default: 96, group: 'Estilo' },
     { key: 'head', label: 'Tamanho das cabecinhas', type: 'range', min: 140, max: 420, step: 5, default: 260, group: 'Estilo' },
     bgField('graph'),
+    bgImageField,
     bgEnterField,
     { key: 'posY', label: 'Posição vertical', type: 'range', min: 0.15, max: 0.75, step: 0.01, default: 0.38, group: 'Layout' },
     { key: 'gap', label: 'Distância entre linhas', type: 'range', min: 200, max: 700, step: 5, default: 360, group: 'Layout' },
@@ -291,7 +319,7 @@ export const pointsCompare = {
     const out = range(t, dur - 0.18, dur);
     sceneBg(rc, P.bg, { enter: P.bgEnter });
     if (out >= 1) return;
-    const t0 = P.bg !== 'none' && P.bgEnter === 'slide' ? 0.25 : 0.05;
+    const t0 = P.bg !== 'none' && P.bgEnter !== 'cut' ? 0.25 : 0.05;
     const two = P.rows === '2';
     const y1 = H * P.posY, y2 = y1 + P.gap;
     const hx = W * 0.3, tx = W * 0.45;

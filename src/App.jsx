@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Preview from './components/Preview.jsx';
+import Library from './components/Library.jsx';
+import { useLibrary } from './lib/useLibrary.js';
 import { TemplatePicker, TeamPanel, TypePanel, FieldsPanel, TrinketPanel, MotionPanel } from './components/panels.jsx';
 import { Section, Btn, Segmented, Label } from './components/ui.jsx';
 import { TEMPLATES, templateById, allDefaultParams, defaultParams } from './templates/index.js';
 import { teamById } from './lib/teams.js';
-import { ensureBuiltinFonts, loadCustomFont } from './lib/fonts.js';
+import { ensureBuiltinFonts } from './lib/fonts.js';
 import { buildNativeTrinkets } from './lib/nativeTrinkets.js';
 import { exportWebM, exportPNGZip, exportStillPNG, download, webmAlphaSupported } from './lib/exporter.js';
 
@@ -19,8 +21,9 @@ function initialState() {
     palette: { ...teamById('lilas').palette },
     soft: 0,
     tear: 0.7,
-    fonts: { head: 'Hand', body: 'PlayfairItalic' },
+    fonts: { head: 'Hand', body: 'PlayfairItalic', accent: 'Script' },
     motion: 'fluid',
+    view: 'editor',
     durations: Object.fromEntries(TEMPLATES.map((t) => [t.id, t.defaultDuration])),
     params: allDefaultParams(),
     shadow: { on: true, size: 8, blur: 14, opacity: 0.3, color: '#4b3a78' },
@@ -41,11 +44,12 @@ function initialState() {
       return {
         ...base,
         ...saved,
-        fonts: { head: saved.fonts?.head?.startsWith('custom:') ? 'Hand' : saved.fonts?.head || 'Hand', body: saved.fonts?.body?.startsWith('custom:') ? 'PlayfairItalic' : saved.fonts?.body || 'PlayfairItalic' },
+        fonts: { ...base.fonts, ...(saved.fonts || {}) },
         durations: { ...base.durations, ...(saved.durations || {}) },
         params,
         shadow: { ...base.shadow, ...(saved.shadow || {}) },
-        trinkets: [],
+        // trinkets from the Acervo / native pack survive reloads
+        trinkets: (saved.trinkets || []).filter((t) => /^(lib_|native_)/.test(t.assetId)),
         selectedTrinket: null,
       };
     }
@@ -89,7 +93,7 @@ export default function App() {
   useEffect(() => {
     const t = setTimeout(() => {
       try {
-        const { trinkets, selectedTrinket, ...rest } = state;
+        const { selectedTrinket, ...rest } = state;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(rest));
       } catch {
         /* storage might be blocked */
@@ -104,23 +108,43 @@ export default function App() {
     [state]
   );
 
-  const uploadImage = useCallback((file, kind) => {
-    return new Promise((resolve, reject) => {
-      const url = URL.createObjectURL(file);
-      const img = new Image();
-      img.onload = () => {
-        const id = 'asset_' + uid();
-        assetsRef.current[id] = { img, url, name: file.name.replace(/\.[^.]+$/, ''), kind };
-        setAssetsVersion((v) => v + 1);
-        resolve(id);
-      };
-      img.onerror = () => {
-        notify('Não consegui abrir essa imagem.', 'err');
-        reject(new Error('img'));
-      };
-      img.src = url;
-    });
-  }, [notify]);
+  const library = useLibrary(assetsRef, {
+    onAssetsChanged: useCallback(() => setAssetsVersion((v) => v + 1), []),
+    onFontsChanged: useCallback(() => setFontVersion((v) => v + 1), []),
+    onFontRole: useCallback((role, fontId) => setState((s) => ({ fonts: { ...s.fonts, [role]: fontId } })), [setState]),
+    notify,
+  });
+
+  // Every upload in the editor is also saved to the Acervo (category = where it was uploaded)
+  const uploadImage = useCallback(async (file, category = 'photo') => {
+    const ids = await library.addImages([file], category);
+    if (!ids.length) {
+      notify('Não consegui abrir essa imagem.', 'err');
+      throw new Error('img');
+    }
+    return ids[0];
+  }, [library, notify]);
+
+  // ✨ Auto-colagem: scatter trinkets from the Acervo around the edges, each with entrance + idle motion
+  const autoCollage = (count = 5) => {
+    const lib = Object.entries(assetsRef.current).filter(([, a]) => a.kind === 'trinket').map(([id]) => id);
+    const pool = lib.length ? lib : Object.entries(assetsRef.current).filter(([, a]) => a.kind === 'native').map(([id]) => id);
+    if (!pool.length) return notify('Suba trinkets no Acervo primeiro ✿', 'err');
+    // edges only, so the main content (titles, heads, cards) stays clear
+    const spots = [[150, 230], [930, 300], [130, 1700], [950, 1620], [540, 130], [990, 960], [80, 1080], [560, 1820], [960, 1830], [100, 560]];
+    const rnd = Math.random;
+    for (let i = spots.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [spots[i], spots[j]] = [spots[j], spots[i]]; }
+    const idles = ['float', 'wiggle', 'float', 'pulse'];
+    const picks = spots.slice(0, Math.min(count, spots.length)).map(([x, y], i) => ({
+      id: uid(), auto: true,
+      assetId: pool[Math.floor(rnd() * pool.length)],
+      x: x + (rnd() - 0.5) * 80, y: y + (rnd() - 0.5) * 80, w: 300,
+      scale: 0.45 + rnd() * 0.4, rot: Math.round((rnd() - 0.5) * 40), flip: rnd() < 0.3,
+      shadow: true, anim: rnd() < 0.25 ? 'slam' : 'pop', delay: +(0.08 + i * 0.07).toFixed(2), exit: true, wiggle: true,
+      idle: idles[Math.floor(rnd() * idles.length)],
+    }));
+    setState((s) => ({ trinkets: [...s.trinkets.filter((t) => !t.auto), ...picks], selectedTrinket: null }));
+  };
 
   const setParams = (patch) =>
     setState((s) => ({ params: { ...s.params, [s.templateId]: { ...s.params[s.templateId], ...patch } } }));
@@ -130,7 +154,7 @@ export default function App() {
     const id = uid();
     const n = state.trinkets.length;
     setState((s) => ({
-      trinkets: [...s.trinkets, { id, assetId, x: 540 + ((n * 97) % 300) - 150, y: 760 + ((n * 131) % 500) - 250, w: 300, scale: 1, rot: ((n * 37) % 30) - 15, flip: false, shadow: true, anim: 'pop', delay: Math.min(1.2, 0.12 + n * 0.06), exit: true, wiggle: true }],
+      trinkets: [...s.trinkets, { id, assetId, x: 540 + ((n * 97) % 300) - 150, y: 760 + ((n * 131) % 500) - 250, w: 300, scale: 1, rot: ((n * 37) % 30) - 15, flip: false, shadow: true, anim: 'pop', delay: Math.min(1.2, 0.12 + n * 0.06), exit: true, wiggle: true, idle: 'float' }],
       selectedTrinket: id,
     }));
   };
@@ -147,8 +171,8 @@ export default function App() {
     });
   const deleteAsset = (id) => {
     setState((s) => ({ trinkets: s.trinkets.filter((t) => t.assetId !== id) }));
-    delete assetsRef.current[id];
-    setAssetsVersion((v) => v + 1);
+    const libId = assetsRef.current[id]?.libId;
+    if (libId && window.confirm('Apagar este trinket do seu acervo?')) library.removeImage(libId);
   };
 
   // keyboard: delete selected trinket, space play handled in preview
@@ -163,19 +187,36 @@ export default function App() {
   });
 
   const onUploadFont = async (file) => {
-    try {
-      const f = await loadCustomFont(file);
-      setState((s) => ({ fonts: { ...s.fonts, head: f.id } }));
-      setFontVersion((v) => v + 1);
-      notify(`Fonte "${f.label}" carregada e aplicada nos títulos ✓`);
-    } catch (e) {
-      notify('Não consegui ler essa fonte. Use .ttf, .otf ou .woff.', 'err');
-    }
+    const out = await library.addFonts([file], 'head');
+    if (out.length) notify(`Fonte "${out[0].name}" salva no Acervo e aplicada nos títulos ✓`);
   };
 
   return (
     <div className="h-full flex flex-col">
-      <Header />
+      <Header view={state.view} setView={(v) => setState({ view: v })} libCount={library.images.length} />
+      {state.view === 'acervo' ? (
+        <div className="flex-1 min-h-0 bg-desk-950">
+          <Library
+            library={library}
+            fontsState={state.fonts}
+            notify={notify}
+            onUseImage={(im) => {
+              const id = 'lib_' + im.id;
+              if (im.category === 'trinket') addTrinket(id);
+              else if (im.category === 'background') {
+                const has = templateById(state.templateId).fields.some((f) => f.key === 'bgImage');
+                if (!has) return notify('Esse template não usa fundo. Escolha Título Lilás, Disclaimer ou Cabecinhas.', 'err');
+                setParams({ bg: 'image', bgImage: id });
+              } else {
+                const slotKey = templateById(state.templateId).fields.find((f) => f.type === 'image')?.key;
+                if (slotKey) setParams({ [slotKey]: id });
+              }
+              setState({ view: 'editor' });
+              notify(`"${im.name}" aplicado em ${templateById(state.templateId).name} ✓`);
+            }}
+          />
+        </div>
+      ) : (
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
         <aside className="lg:w-[440px] shrink-0 lg:h-full overflow-y-auto scroll-thin border-r border-desk-700/70 bg-desk-900">
           <TemplatePicker value={state.templateId} onChange={(id) => { timeRef.current = 0; setState({ templateId: id }); }} />
@@ -197,15 +238,17 @@ export default function App() {
             assets={assetsRef.current}
             trinkets={state.trinkets}
             selected={state.selectedTrinket}
-            onUpload={(f, kind) => uploadImage(f, kind).then((id) => { addTrinket(id); return id; }).catch(() => {})}
+            onUpload={(f) => uploadImage(f, 'trinket').then((id) => { addTrinket(id); return id; }).catch(() => {})}
             onAdd={addTrinket}
             onSelect={(id) => setState({ selectedTrinket: id })}
             onUpdate={updateTrinket}
             onRemove={removeTrinket}
             onMove={moveTrinket}
             onDeleteAsset={deleteAsset}
+            onAutoCollage={autoCollage}
+            onClear={() => setState({ trinkets: [], selectedTrinket: null })}
           />
-          <TypePanel fonts={state.fonts} onFonts={(f) => setState({ fonts: f })} onUploadFont={onUploadFont} fontVersion={fontVersion} />
+          <TypePanel fonts={state.fonts} onFonts={(f) => setState({ fonts: f })} onUploadFont={onUploadFont} fontVersion={fontVersion} onOpenLibrary={() => setState({ view: 'acervo' })} />
           <MotionPanel
             state={renderState}
             tpl={tpl}
@@ -218,7 +261,7 @@ export default function App() {
           />
           <ExportPanel state={renderState} assets={assetsRef.current} fps={state.exportFps} setFps={(v) => setState({ exportFps: v })} notify={notify} timeRef={timeRef} />
           <div className="p-5 font-mono text-[10px] text-stone-600 leading-relaxed">
-            Paddock Press · gerador local · nada sai do seu computador.<br />Imagens e fontes enviadas ficam só nesta aba.
+            Paddock Press · gerador local · nada sai do seu computador.<br />Imagens e fontes enviadas ficam salvas no seu Acervo (neste navegador).
           </div>
         </aside>
         <main className="flex-1 min-w-0 min-h-[80vh] lg:min-h-0 bg-desk-950">
@@ -233,6 +276,7 @@ export default function App() {
           />
         </main>
       </div>
+      )}
       <AnimatePresence>
         {toast && (
           <motion.div
@@ -250,10 +294,10 @@ export default function App() {
   );
 }
 
-function Header() {
+function Header({ view, setView, libCount }) {
   const letters = [
-    ['P', '#ff3b2f', '#fff', 'Anton'], ['A', '#efe9dc', '#111', 'Playfair Display'], ['D', '#111', '#ffd400', 'Anton'],
-    ['D', '#ff87bc', '#111', 'Syne'], ['O', '#efe9dc', '#111', 'Courier Prime'], ['C', '#ff8000', '#111', 'Anton'], ['K', '#111', '#efe9dc', 'Playfair Display'],
+    ['P', '#c0b4fc', '#2f2a36', 'Shadows Into Light Two'], ['A', '#ece6dc', '#4b4358', 'Playfair Display'], ['D', '#8a74a8', '#fff', 'Shadows Into Light Two'],
+    ['D', '#f3c6da', '#4b4358', 'Syne'], ['O', '#ece6dc', '#4b4358', 'Courier Prime'], ['C', '#b5a79b', '#fff', 'Shadows Into Light Two'], ['K', '#4b4358', '#c0b4fc', 'Playfair Display'],
   ];
   return (
     <header className="flex items-center gap-4 px-5 py-3 border-b border-desk-700/70 bg-desk-900">
@@ -276,7 +320,14 @@ function Header() {
         Gerador de transições & overlays F1<br />Reels / TikTok · 1080×1920 · fundo transparente
       </div>
       <div className="flex-1" />
-      <span className="hidden sm:inline font-mono text-[11px] px-2 py-1 bg-marker text-white -rotate-2 shadow-[2px_2px_0_#000]">OFF THE RECORD</span>
+      <nav className="flex bg-desk-800 border border-desk-700 rounded-full p-1">
+        {[['editor', '✎ Editor'], ['acervo', `✿ Meu acervo${libCount ? ' · ' + libCount : ''}`]].map(([v, l]) => (
+          <button key={v} onClick={() => setView(v)} className={`relative px-4 py-1.5 rounded-full text-[13px] font-semibold ${view === v ? 'text-desk-950' : 'text-stone-300 hover:text-white'}`}>
+            {view === v && <motion.span layoutId="mainnav" className="absolute inset-0 rounded-full bg-[#c0b4fc]" transition={{ type: 'spring', stiffness: 600, damping: 40 }} />}
+            <span className="relative">{l}</span>
+          </button>
+        ))}
+      </nav>
     </header>
   );
 }
