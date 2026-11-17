@@ -593,7 +593,21 @@ export function drawImageContain(ctx, img, cx, cy, maxW, maxH, rot = 0) {
   ctx.restore();
 }
 
+const _ph = new Map();
 function photoPlaceholder(ctx, w, h, ink) {
+  const key = `${Math.round(w)}x${Math.round(h)}|${ink}`;
+  let c = _ph.get(key);
+  if (!c) {
+    c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(w));
+    c.height = Math.max(1, Math.round(h));
+    drawPlaceholder(c.getContext('2d'), w, h, ink);
+    _ph.set(key, c);
+  }
+  ctx.drawImage(c, 0, 0, w, h);
+}
+
+function drawPlaceholder(ctx, w, h, ink) {
   ctx.save();
   ctx.fillStyle = '#cfc8b8';
   ctx.fillRect(0, 0, w, h);
@@ -673,10 +687,11 @@ export function photoSlot(ctx, img, { x, y, w, h, rot = 0, frame = 'polaroid', s
     ctx.rect(pad, pad, w, h);
     ctx.clip();
     ctx.translate(pad, pad);
-    ctx.filter = filt;
-    if (img) drawImageCover(ctx, img, w, h, crop);
-    else if (placeholder) photoPlaceholder(ctx, w, h, ink);
-    ctx.filter = 'none';
+    if (img) {
+      ctx.filter = filt;
+      drawImageCover(ctx, img, w, h, crop);
+      ctx.filter = 'none';
+    } else if (placeholder) photoPlaceholder(ctx, w, h, ink);
     ctx.restore();
     // inner edge
     ctx.strokeStyle = '#00000022';
@@ -706,10 +721,11 @@ export function photoSlot(ctx, img, { x, y, w, h, rot = 0, frame = 'polaroid', s
     tornRectPath(ctx, w, h, shapeOpts);
     ctx.save();
     ctx.clip();
-    ctx.filter = filt;
-    if (img) drawImageCover(ctx, img, w, h, crop);
-    else if (placeholder) photoPlaceholder(ctx, w, h, ink);
-    ctx.filter = 'none';
+    if (img) {
+      ctx.filter = filt;
+      drawImageCover(ctx, img, w, h, crop);
+      ctx.filter = 'none';
+    } else if (placeholder) photoPlaceholder(ctx, w, h, ink);
     ctx.globalCompositeOperation = 'multiply';
     drawTexture(ctx, 'none', w, h, seed, 0.4);
     ctx.restore();
