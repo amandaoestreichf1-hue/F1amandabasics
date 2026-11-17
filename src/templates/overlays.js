@@ -77,7 +77,7 @@ export const errata = {
         const ww = Math.min(ctx.measureText(P.wrong).width, pw - 150);
         ctx.fillText(P.wrong, L + 100, y, pw - 150);
         ctx.restore();
-        markerLine(ctx, L + 90, y + 2, L + 110 + ww, y - 4, { color: '#e3262b', width: 11, progress: ease.outCubic(range(t, 0.45, 0.62)), seed: 4 });
+        markerLine(ctx, L + 90, y + 2, L + 110 + ww, y - 4, { color: '#e07aa5', width: 11, progress: ease.outCubic(range(t, 0.45, 0.62)), seed: 4 });
       }
       y += 90;
     }
@@ -230,7 +230,7 @@ export const ticker = {
     const from = parsePos(P.from), to = parsePos(P.to);
     const dnf = to === null;
     const delta = !dnf && from !== null ? from - to : 0;
-    const deltaColor = dnf ? '#e3262b' : delta > 0 ? '#1fae4b' : delta < 0 ? '#e3262b' : '#8a8a8a';
+    const deltaColor = dnf ? '#e2627d' : delta > 0 ? '#5fbf8a' : delta < 0 ? '#e2627d' : '#8a8a8a';
     // label
     const lAp = env.at(0.1, 0.2, (x) => ease.outBack(x, 2));
     if (P.label && lAp > 0) {
@@ -244,7 +244,7 @@ export const ticker = {
         g.fillText(P.label, w / 2, h / 2 + 2);
       });
     }
-    paperPiece(ctx, { x: cx, y: cy + 12, w: sw, h: sh, rot: deg(0.8), color: '#171614', seed: 1311, amp: 8, step: 16, shadow: rc.shadow }, (g, w, h) => {
+    paperPiece(ctx, { x: cx, y: cy + 12, w: sw, h: sh, rot: deg(0.8), color: pal.ink, seed: 1311, amp: 8, step: 16, shadow: rc.shadow }, (g, w, h) => {
       // ticker rule lines
       g.fillStyle = pal.accent;
       g.fillRect(0, 14, w, 8);
@@ -292,13 +292,13 @@ export const ticker = {
         const k = ease.outExpo(range(t, 0.45, 0.95));
         label = 'P' + Math.round(from + (to - from) * k);
       }
-      paperPiece(ctx, { x: tx, y: cy + 8, w: 170, h: 150, rot: deg(2.5), color: dnf ? '#e3262b' : pal.accent, seed: 1341, amp: 5, step: 12, scale: toAp, shadow: rc.shadow }, (g, w, h) => {
+      paperPiece(ctx, { x: tx, y: cy + 8, w: 170, h: 150, rot: deg(2.5), color: dnf ? '#e2627d' : pal.accent, seed: 1341, amp: 5, step: 12, scale: toAp, shadow: rc.shadow }, (g, w, h) => {
         drawFitText(g, label, { x: w / 2, y: h / 2 + 6, fontId: rc.fonts.head, size: 104, maxWidth: w - 20, color: '#fff' });
       });
     }
     // delta badge / DNF stamp
     if (dnf) {
-      stamp(ctx, { x: cx + 330, y: cy - 130, text: P.to.toUpperCase(), sub: 'FIM DE PROVA', color: '#e3262b', width: 300, rot: deg(12), progress: range(t, 0.6, 0.8), fontId: rc.fonts.head });
+      stamp(ctx, { x: cx + 330, y: cy - 130, text: P.to.toUpperCase(), sub: 'FIM DE PROVA', color: '#e2627d', width: 300, rot: deg(12), progress: range(t, 0.6, 0.8), fontId: rc.fonts.head });
     } else if (delta !== 0) {
       const bAp = env.at(0.75, 0.18, (x) => ease.outBack(x, 2.4));
       if (bAp > 0) {

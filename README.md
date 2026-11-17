@@ -15,6 +15,17 @@ Use **Chrome ou Edge no computador** (melhor suporte a WebCodecs, VP9 com alfa e
 
 ## O que tem
 
+**✿ Do seu jeito · Lilás** (identidade padrão, tirada das suas edições: lilás `#c0b4fc`,
+xadrez lilás/linho com trama de tecido, papel quadriculado amassado, letra de mão em caixa alta):
+
+- **Título Lilás:** nome em lilás, linha bold pequena e palavra em script surgindo palavra por palavra.
+- **Xadrez Lilás:** transição com quadradinhos de tecido em cascata.
+- **Disclaimer / Nota:** título circulado à mão e texto em letra de mão.
+- **Cabecinhas & Pontos:** cabeças recortadas, "340 PTS" ou "PRECISA GANHAR TUDO", seta lilás e diferença.
+
+Os demais templates aparecem abaixo. Todos usam a paleta Lilás por padrão; ao escolher uma equipe, o controle
+**Suavizar cores** deixa as cores mais delicadas.
+
 | Categoria | Template | Notas |
 |---|---|---|
 | A · Transições | **Manchete Wipe** | Tiras de jornal com manchetes editáveis e carimbo *BREAKING* |

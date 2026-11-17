@@ -1,5 +1,9 @@
 // Built-in editorial fonts + runtime custom font upload (e.g. Bootzy TM).
 export const BUILTIN_FONTS = [
+  { id: 'Hand', label: 'Letra de mão (caixa alta)', family: '"Shadows Into Light Two"', weight: '400', style: 'normal', tracking: 0.09 },
+  { id: 'Script', label: 'Script (campeão)', family: '"Yellowtail"', weight: '400', style: 'normal' },
+  { id: 'Marker', label: 'Marcador (340 PTS)', family: '"Permanent Marker"', weight: '400', style: 'normal', tracking: 0.02 },
+  { id: 'Rounded', label: 'Bold largo (ainda pode ser)', family: '"Unbounded"', weight: '800', style: 'normal' },
   { id: 'Anton', label: 'Anton (condensada)', family: '"Anton"', weight: '400', style: 'normal' },
   { id: 'Syne', label: 'Syne (display)', family: '"Syne"', weight: '800', style: 'normal' },
   { id: 'PlayfairItalic', label: 'Playfair Display Itálico', family: '"Playfair Display"', weight: '900', style: 'italic' },
@@ -11,6 +15,10 @@ const custom = []; // {id,label,family,weight,style}
 
 export function allFonts() {
   return [...custom, ...BUILTIN_FONTS];
+}
+
+export function fontTracking(id) {
+  return fontById(id).tracking || 0;
 }
 
 export function fontById(id) {

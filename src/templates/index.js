@@ -1,14 +1,21 @@
 import { newsWipe, carWipe, startLights } from './transitions.js';
 import { quemServiu, quemDormiu } from './cards.js';
 import { errata, lowerThird, ticker } from './overlays.js';
+import { lilacTitle, checkerWipe, disclaimer, pointsCompare } from './soft.js';
 
-export const TEMPLATES = [newsWipe, carWipe, startLights, quemServiu, quemDormiu, errata, lowerThird, ticker];
+lilacTitle.category = checkerWipe.category = disclaimer.category = pointsCompare.category = 'lilas';
+checkerWipe.isTransition = true;
+
+export const TEMPLATES = [lilacTitle, checkerWipe, disclaimer, pointsCompare, newsWipe, carWipe, startLights, quemServiu, quemDormiu, errata, lowerThird, ticker];
 
 export const CATEGORIES = [
+  { id: 'lilas', label: '✿ Do seu jeito · Lilás', hint: 'Baseados nas suas edições.' },
   { id: 'transition', label: 'A · Transições de tela cheia', hint: 'Tela 100% coberta no meio da duração = ponto de corte.' },
   { id: 'card', label: 'B · Quem Serviu / Quem Dormiu', hint: 'Cards de resumo pós-corrida.' },
   { id: 'overlay', label: 'C · Overlays de edição', hint: 'Para jogar por cima do vídeo.' },
 ];
+
+export const isTransition = (t) => t.category === 'transition' || !!t.isTransition;
 
 export const templateById = (id) => TEMPLATES.find((t) => t.id === id) || TEMPLATES[0];
 

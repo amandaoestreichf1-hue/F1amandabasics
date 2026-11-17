@@ -181,7 +181,9 @@ export function drawSticker(ctx, src, { x, y, w, rot = 0, flip = false, shadow, 
   if (flip) ctx.scale(-1, 1);
   if (shadow) {
     const sil = silhouette(src, shadow.color);
+    if (shadow.blur) ctx.filter = `blur(${shadow.blur}px)`;
     ctx.drawImage(sil, -w / 2 + (flip ? -shadow.dx : shadow.dx), -h / 2 + shadow.dy, w, h);
+    ctx.filter = 'none';
   }
   ctx.drawImage(src, -w / 2, -h / 2, w, h);
   ctx.restore();

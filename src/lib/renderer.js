@@ -4,6 +4,8 @@ import { templateById } from '../templates/index.js';
 import { drawSticker } from './car.js';
 import { ease, range, clamp } from './easing.js';
 import { rng } from './rng.js';
+import { STYLE } from './paper.js';
+import { soften, rgba } from './teams.js';
 
 export const W = 1080, H = 1920;
 export const STOP_FPS = 15;
@@ -44,12 +46,13 @@ export function renderFrame(ctx, state, assets, time, { editor = false } = {}) {
   ctx.restore();
   ctx.save();
   const sh = state.shadow;
+  STYLE.tear = state.tear ?? 1;
   const rc = {
     ctx, W, H, t, dur, boil,
     P: state.params[tpl.id],
-    pal: state.palette,
+    pal: soften(state.palette, state.soft || 0),
     fonts: state.fonts,
-    shadow: sh.on ? { dx: sh.size, dy: sh.size, color: sh.color } : null,
+    shadow: sh.on ? { dx: sh.size * 0.6, dy: sh.size, color: rgba(sh.color, sh.opacity ?? 0.85), blur: sh.blur || 0 } : null,
     img: (id) => (id ? assets[id]?.img || null : null),
   };
   try {

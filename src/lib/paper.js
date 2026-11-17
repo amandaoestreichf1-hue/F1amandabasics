@@ -1,7 +1,18 @@
 // Collage primitives: torn paper, newsprint, tape, stamps, photo slots, ransom-note letters.
 import { rng, hashStr } from './rng.js';
-import { fontCss } from './fonts.js';
+import { fontCss, fontTracking } from './fonts.js';
 import { ease, clamp } from './easing.js';
+
+// Global look knobs (set by the renderer every frame)
+export const STYLE = { tear: 1 };
+
+// Shadow fill: hard ("sombra seca") when blur = 0, soft & dreamy when blur > 0
+function shadowFill(ctx, shadow) {
+  if (shadow.blur) ctx.filter = `blur(${shadow.blur}px)`;
+  ctx.fillStyle = shadow.color;
+  ctx.fill();
+  ctx.filter = 'none';
+}
 
 // ---------------------------------------------------------------------------
 // Textures (generated once, lazily)
@@ -165,9 +176,10 @@ export function tornRectPath(ctx, w, h, { seed = 1, amp = 10, step = 18, torn = 
  */
 export function paperPiece(ctx, opts, inner) {
   const {
-    x, y, w, h, rot = 0, color = '#f2ede2', seed = 1, torn, amp = 9, step = 18,
+    x, y, w, h, rot = 0, color = '#f2ede2', seed = 1, torn, step = 18,
     texture = 'grain', shadow = null, fiber = '#fbf9f3', textureAlpha = 1, newsSeed = 3, alpha = 1, scale = 1,
   } = opts;
+  const amp = opts.amp === undefined ? 9 * STYLE.tear : opts.amp * STYLE.tear;
   if (alpha <= 0 || scale <= 0) return;
   ctx.save();
   ctx.globalAlpha *= alpha;
@@ -181,8 +193,7 @@ export function paperPiece(ctx, opts, inner) {
     ctx.save();
     ctx.translate(shadow.dx, shadow.dy);
     tornRectPath(ctx, w, h, { ...shapeOpts, expand: fiber ? 4 : 0 });
-    ctx.fillStyle = shadow.color;
-    ctx.fill();
+    shadowFill(ctx, shadow);
     ctx.restore();
   }
   if (fiber) {
@@ -211,6 +222,12 @@ export function drawTexture(ctx, texture, w, h, seed, a = 1, newsSeed = 3) {
     const r = rng(seed);
     const ox = -r() * Math.max(0, tex.width - w), oy = -r() * Math.max(0, tex.height - h);
     for (let yy = oy; yy < h; yy += tex.height) for (let xx = ox; xx < w; xx += tex.width) ctx.drawImage(tex, xx, yy);
+  } else if (texture === 'graph') {
+    ctx.globalAlpha *= a;
+    graphLines(ctx, w, h);
+    const cr = crumpleTexture();
+    const r = rng(seed + 9);
+    ctx.drawImage(cr, -r() * Math.max(0, cr.width - w), -r() * Math.max(0, cr.height - h));
   } else if (texture === 'lined' || texture === 'grid') {
     ctx.globalAlpha *= 0.5 * a;
     ctx.strokeStyle = '#5b8fd6';
@@ -234,6 +251,144 @@ export function drawTexture(ctx, texture, w, h, seed, a = 1, newsSeed = 3) {
   const r = rng(seed + 5);
   const ox = -r() * 512, oy = -r() * 512;
   for (let yy = oy; yy < h; yy += 512) for (let xx = ox; xx < w; xx += 512) ctx.drawImage(g, xx, yy);
+  ctx.restore();
+}
+
+export function graphLines(ctx, w, h, step = 26, color = 'rgba(120,110,100,0.22)') {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (let yy = step; yy < h; yy += step) { ctx.moveTo(0, yy); ctx.lineTo(w, yy); }
+  for (let xx = step; xx < w; xx += step) { ctx.moveTo(xx, 0); ctx.lineTo(xx, h); }
+  ctx.stroke();
+  ctx.restore();
+}
+
+// Crumpled-paper creases: soft light/dark facets (cached, full frame size)
+let _crumple = null;
+export function crumpleTexture() {
+  if (_crumple) return _crumple;
+  const c = document.createElement('canvas');
+  c.width = 1400; c.height = 2300;
+  const g = c.getContext('2d');
+  const r = rng(4242);
+  for (let i = 0; i < 46; i++) {
+    const px = r() * c.width, py = r() * c.height, ang = r() * Math.PI;
+    const dx = Math.cos(ang), dy = Math.sin(ang), nx = -dy, ny = dx;
+    const L = 3000, wd = 90 + r() * 320;
+    const side = (sign, col) => {
+      const gr = g.createLinearGradient(px, py, px + nx * wd * sign, py + ny * wd * sign);
+      gr.addColorStop(0, col);
+      gr.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = gr;
+      g.beginPath();
+      g.moveTo(px - dx * L, py - dy * L);
+      g.lineTo(px + dx * L, py + dy * L);
+      g.lineTo(px + dx * L + nx * wd * sign, py + dy * L + ny * wd * sign);
+      g.lineTo(px - dx * L + nx * wd * sign, py - dy * L + ny * wd * sign);
+      g.closePath();
+      g.fill();
+    };
+    const k = 0.025 + r() * 0.045;
+    side(1, `rgba(70,58,48,${k})`);
+    side(-1, `rgba(255,255,255,${k * 1.4})`);
+  }
+  _crumple = c;
+  return c;
+}
+
+// Linen / burlap weave (tileable)
+let _weave = null;
+export function weaveTexture() {
+  if (_weave) return _weave;
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d');
+  const r = rng(77);
+  for (let y = 0; y < 256; y += 4) {
+    g.fillStyle = `rgba(${r() < 0.5 ? '255,255,255' : '40,30,30'},${0.04 + r() * 0.1})`;
+    g.fillRect(0, y, 256, 2);
+  }
+  for (let x = 0; x < 256; x += 4) {
+    g.fillStyle = `rgba(${r() < 0.5 ? '255,255,255' : '40,30,30'},${0.04 + r() * 0.1})`;
+    g.fillRect(x, 0, 2, 256);
+  }
+  for (let i = 0; i < 2500; i++) {
+    g.fillStyle = `rgba(${r() < 0.5 ? '255,255,255' : '30,20,20'},${r() * 0.12})`;
+    g.fillRect(r() * 256, r() * 256, 1 + r() * 2, 1);
+  }
+  _weave = c;
+  return c;
+}
+
+export function weaveOver(ctx, w, h, a = 1) {
+  const t = weaveTexture();
+  ctx.save();
+  ctx.globalAlpha *= a;
+  for (let y = 0; y < h; y += 256) for (let x = 0; x < w; x += 256) ctx.drawImage(t, x, y);
+  ctx.restore();
+}
+
+// Hand-drawn ellipse that draws itself (slightly overshoots like a real pen loop)
+export function handCircle(ctx, cx, cy, rx, ry, { color = '#fff', width = 7, progress = 1, seed = 1, rot = -0.06 } = {}) {
+  if (progress <= 0) return;
+  const r = rng(seed);
+  const turns = 1.12, steps = 90;
+  const end = Math.max(2, Math.floor(steps * progress));
+  const a0 = -Math.PI * 0.6 + r() * 0.4;
+  const wob = [r(), r(), r()];
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(rot);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  for (let i = 0; i <= end; i++) {
+    const k = i / steps;
+    const a = a0 + k * Math.PI * 2 * turns;
+    const grow = 1 + (k - 0.5) * 0.09 + Math.sin(a * 2 + wob[0] * 6) * 0.025;
+    const x = Math.cos(a) * rx * grow, y = Math.sin(a) * ry * grow;
+    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+
+// Thin hand-drawn arrow
+export function handArrow(ctx, x0, y0, x1, y1, { color = '#c0b4fc', width = 7, progress = 1, seed = 1, bend = 0.12, head = 28 } = {}) {
+  if (progress <= 0) return;
+  const r = rng(seed);
+  const mx = (x0 + x1) / 2 + (y1 - y0) * bend * (r() < 0.5 ? 1 : -1);
+  const my = (y0 + y1) / 2 - (x1 - x0) * bend;
+  const pt = (t) => [
+    (1 - t) * (1 - t) * x0 + 2 * (1 - t) * t * mx + t * t * x1,
+    (1 - t) * (1 - t) * y0 + 2 * (1 - t) * t * my + t * t * y1,
+  ];
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  const n = 40, end = Math.max(1, Math.floor(n * progress));
+  for (let i = 0; i <= end; i++) {
+    const [x, y] = pt(i / n);
+    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  }
+  ctx.stroke();
+  if (progress > 0.85) {
+    const [ex, ey] = pt(1), [px, py] = pt(0.92);
+    const a = Math.atan2(ey - py, ex - px);
+    const hp = Math.min(1, (progress - 0.85) / 0.15);
+    ctx.beginPath();
+    ctx.moveTo(ex - Math.cos(a - 0.5) * head * hp, ey - Math.sin(a - 0.5) * head * hp);
+    ctx.lineTo(ex, ey);
+    ctx.lineTo(ex - Math.cos(a + 0.5) * head * hp, ey - Math.sin(a + 0.5) * head * hp);
+    ctx.stroke();
+  }
   ctx.restore();
 }
 
@@ -475,6 +630,7 @@ export function photoSlot(ctx, img, { x, y, w, h, rot = 0, frame = 'polaroid', s
         ctx.shadowColor = shadow.color;
         ctx.shadowOffsetX = shadow.dx;
         ctx.shadowOffsetY = shadow.dy;
+        ctx.shadowBlur = shadow.blur || 0;
       }
       ctx.translate(-w / 2, -h / 2);
       const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
@@ -505,8 +661,9 @@ export function photoSlot(ctx, img, { x, y, w, h, rot = 0, frame = 'polaroid', s
     const fw = w + pad * 2, fh = h + pad + bottom;
     ctx.translate(-fw / 2, -fh / 2);
     if (shadow) {
-      ctx.fillStyle = shadow.color;
-      ctx.fillRect(shadow.dx, shadow.dy, fw, fh);
+      ctx.beginPath();
+      ctx.rect(shadow.dx, shadow.dy, fw, fh);
+      shadowFill(ctx, shadow);
     }
     ctx.fillStyle = paper;
     ctx.fillRect(0, 0, fw, fh);
@@ -535,13 +692,12 @@ export function photoSlot(ctx, img, { x, y, w, h, rot = 0, frame = 'polaroid', s
   } else {
     // torn-out magazine photo
     ctx.translate(-w / 2, -h / 2);
-    const shapeOpts = { seed, amp: 9, step: 16 };
+    const shapeOpts = { seed, amp: 9 * STYLE.tear, step: 16 };
     if (shadow) {
       ctx.save();
       ctx.translate(shadow.dx, shadow.dy);
       tornRectPath(ctx, w, h, { ...shapeOpts, expand: 4 });
-      ctx.fillStyle = shadow.color;
-      ctx.fill();
+      shadowFill(ctx, shadow);
       ctx.restore();
     }
     tornRectPath(ctx, w, h, { ...shapeOpts, seed: seed + 17, expand: 5 });
@@ -564,21 +720,27 @@ export function photoSlot(ctx, img, { x, y, w, h, rot = 0, frame = 'polaroid', s
 // ---------------------------------------------------------------------------
 // Text helpers
 // ---------------------------------------------------------------------------
+// Sets font + the font's natural letter-spacing (handwritten caps like airy tracking)
+export function setFont(ctx, fontId, size, extraSpacing = 0) {
+  ctx.font = fontCss(fontId, size);
+  if ('letterSpacing' in ctx) ctx.letterSpacing = `${fontTracking(fontId) * size + extraSpacing}px`;
+}
+
 export function fitFont(ctx, text, fontId, maxSize, maxWidth, minSize = 18) {
   let size = maxSize;
-  ctx.font = fontCss(fontId, size);
+  setFont(ctx, fontId, size);
   const w = ctx.measureText(text).width;
   if (w > maxWidth) size = Math.max(minSize, (size * maxWidth) / w);
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
   return size;
 }
 
 export function drawFitText(ctx, text, { x, y, fontId, size, maxWidth, color, align = 'center', baseline = 'middle', strokeColor, strokeWidth = 0, letterSpacing = 0 }) {
   if (!text) return size;
   const s = fitFont(ctx, text, fontId, size, maxWidth);
-  ctx.font = fontCss(fontId, s);
+  setFont(ctx, fontId, s, letterSpacing);
   ctx.textAlign = align;
   ctx.textBaseline = baseline;
-  if ('letterSpacing' in ctx) ctx.letterSpacing = `${letterSpacing}px`;
   if (strokeColor && strokeWidth) {
     ctx.lineJoin = 'round';
     ctx.lineWidth = strokeWidth;

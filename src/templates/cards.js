@@ -49,13 +49,13 @@ export const quemServiu = {
     { key: 'subtitle', label: 'Subtítulo', type: 'textarea', default: 'Segurou o undercut como se fosse fácil.' },
     { key: 'masthead', label: 'Cabeçalho da revista', type: 'text', default: 'PADDOCK PRESS · EDIÇÃO PÓS-CORRIDA' },
     { key: 'tag', label: 'Etiqueta (ex: P1 · +8)', type: 'text', default: 'P1 · VOLTA MAIS RÁPIDA' },
-    { key: 'ransom', label: 'Título em letras recortadas', type: 'toggle', default: true },
+    { key: 'ransom', label: 'Título em letras recortadas', type: 'toggle', default: false },
     { key: 'photo', label: 'Foto / PNG do piloto', type: 'image', defaultFrame: 'polaroid' },
     { key: 'caption', label: 'Legenda da Polaroid', type: 'text', default: 'servindo. ★' },
     { key: 'stampOn', label: 'Selo', type: 'toggle', default: true, group: 'Selo' },
     { key: 'stampText', label: 'Texto do selo', type: 'text', default: 'PURPLE', group: 'Selo' },
     { key: 'stampSub', label: 'Sub do selo', type: 'text', default: 'SECTOR', group: 'Selo' },
-    { key: 'stampColor', label: 'Cor do selo', type: 'color', default: '#8a2be2', group: 'Selo' },
+    { key: 'stampColor', label: 'Cor do selo', type: 'color', default: '#9d8cf0', group: 'Selo' },
     ...layoutFields,
   ],
   render(rc) {
@@ -109,14 +109,14 @@ export const quemServiu = {
     if (P.ransom) {
       ransomText(ctx, P.title, {
         x: cx, y: T + 215, size: 150, maxWidth: cw - 40, fonts: [rc.fonts.head, rc.fonts.head, 'PlayfairItalic', 'Syne'],
-        schemes: [{ bg: pal.accent, fg: pal.paper }, { bg: pal.ink, fg: pal.paper }, { bg: '#fbfaf6', fg: pal.ink, tex: 'news' }, { bg: pal.accent2, fg: pal.ink }],
+        schemes: [{ bg: pal.accent, fg: pal.ink }, { bg: pal.ink, fg: pal.paper }, { bg: '#fbfaf6', fg: pal.ink, tex: 'news' }, { bg: pal.accent2, fg: pal.ink }],
         seed: 301, appear: titleP, shadow: rc.shadow, boil: rc.boil,
       });
     } else {
       const s = ease.outBack(clamp(titleP * 1.6), 1.4);
       if (s > 0) {
         paperPiece(ctx, { x: cx, y: T + 215, w: cw - 60, h: 190, rot: deg(-2), color: pal.accent, seed: 941, amp: 8, shadow: rc.shadow, scale: s }, (g, w, h) => {
-          drawFitText(g, P.title, { x: w / 2, y: h / 2 + 6, fontId: rc.fonts.head, size: 160, maxWidth: w - 50, color: pal.paper });
+          drawFitText(g, P.title, { x: w / 2, y: h / 2 + 6, fontId: rc.fonts.head, size: 160, maxWidth: w - 50, color: pal.ink });
         });
       }
     }
@@ -159,14 +159,14 @@ export const quemDormiu = {
     { key: 'title', label: 'Título', type: 'text', default: 'QUEM DORMIU' },
     { key: 'subtitle', label: 'Subtítulo', type: 'textarea', default: 'Largou em P3 e acordou em P11.' },
     { key: 'flagText', label: 'Faixa de aviso', type: 'select', options: [['BANDEIRA AMARELA', 'Bandeira Amarela'], ['SAFETY CAR', 'Safety Car'], ['VIRTUAL SAFETY CAR', 'VSC'], ['BOX BOX', 'Box Box'], ['NOTA DA REDAÇÃO', 'Nota da Redação']], default: 'SAFETY CAR' },
-    { key: 'flagColor', label: 'Cor da bandeira', type: 'color', default: '#ffd200' },
+    { key: 'flagColor', label: 'Cor da bandeira', type: 'color', default: '#f7df84' },
     { key: 'ransom', label: 'Título em letras recortadas', type: 'toggle', default: false },
     { key: 'photo', label: 'Foto / PNG', type: 'image', defaultFrame: 'torn', defaultBW: true },
     { key: 'zzz', label: 'Zzz flutuando', type: 'toggle', default: true },
     { key: 'stampOn', label: 'Carimbo', type: 'toggle', default: true, group: 'Selo' },
     { key: 'stampText', label: 'Texto do carimbo', type: 'text', default: 'BOX BOX', group: 'Selo' },
     { key: 'stampSub', label: 'Sub do carimbo', type: 'text', default: 'OFF THE RECORD', group: 'Selo' },
-    { key: 'stampColor', label: 'Cor do carimbo', type: 'color', default: '#d7261e', group: 'Selo' },
+    { key: 'stampColor', label: 'Cor do carimbo', type: 'color', default: '#e58fb0', group: 'Selo' },
     ...layoutFields.map((f) => (f.key === 'tilt' ? { ...f, default: 1.5 } : f)),
   ],
   render(rc) {
@@ -180,7 +180,7 @@ export const quemDormiu = {
     const yellow = P.flagColor;
     paperPiece(ctx, { x: cx, y: cy, w: cw, h: ch, color: pal.paper, seed: 1001, amp: 10, step: 18, texture: 'news', newsSeed: 4, textureAlpha: 0.55, shadow: rc.shadow }, (g, w) => {
       // hazard band
-      kerb(g, 0, 0, w, 120, '#141414', yellow, 70);
+      kerb(g, 0, 0, w, 120, pal.ink, yellow, 70);
     });
     // flag label
     const fAp = env.at(0.12, 0.22, (x) => ease.outBack(x, 1.8));
@@ -189,7 +189,7 @@ export const quemDormiu = {
       const tw = ctx.measureText(P.flagText).width + 80;
       paperPiece(ctx, { x: cx, y: T + 62, w: tw, h: 84, rot: deg(-1.5), color: yellow, seed: 1011, amp: 5, step: 12, shadow: rc.shadow, scale: fAp }, (g, w, h) => {
         g.font = fontCss('Courier', 48);
-        g.fillStyle = '#111';
+        g.fillStyle = pal.ink;
         g.textAlign = 'center';
         g.textBaseline = 'middle';
         g.fillText(P.flagText, w / 2, h / 2 + 3);
@@ -200,13 +200,13 @@ export const quemDormiu = {
     if (P.ransom) {
       ransomText(ctx, P.title, {
         x: cx, y: T + 255, size: 140, maxWidth: cw - 40, fonts: [rc.fonts.head, 'Courier', 'PlayfairItalic'],
-        schemes: [{ bg: yellow, fg: '#111' }, { bg: '#151515', fg: yellow }, { bg: '#fbfaf6', fg: '#111', tex: 'news' }],
+        schemes: [{ bg: yellow, fg: pal.ink }, { bg: pal.ink, fg: yellow }, { bg: '#fbfaf6', fg: '#111', tex: 'news' }],
         seed: 401, appear: titleP, shadow: rc.shadow, boil: rc.boil,
       });
     } else {
       const s = ease.outBack(clamp(titleP * 1.6), 1.4);
       if (s > 0) {
-        paperPiece(ctx, { x: cx - 10, y: T + 255, w: cw - 70, h: 180, rot: deg(1.8), color: '#151515', seed: 1021, amp: 8, shadow: rc.shadow, scale: s }, (g, w, h) => {
+        paperPiece(ctx, { x: cx - 10, y: T + 255, w: cw - 70, h: 180, rot: deg(1.8), color: pal.ink, seed: 1021, amp: 8, shadow: rc.shadow, scale: s }, (g, w, h) => {
           drawFitText(g, P.title, { x: w / 2, y: h / 2 + 6, fontId: rc.fonts.head, size: 150, maxWidth: w - 50, color: yellow });
         });
       }

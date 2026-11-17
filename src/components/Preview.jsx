@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { renderFrame, hitTrinket, W, H } from '../lib/renderer.js';
-import { templateById } from '../templates/index.js';
+import { templateById, isTransition } from '../templates/index.js';
 import { Btn, FileButton } from './ui.jsx';
 
 export default function Preview({ state, assets, assetsVersion, fontVersion, onTrinketChange, onSelectTrinket, timeRef }) {
@@ -87,7 +87,7 @@ export default function Preview({ state, assets, assetsVersion, fontVersion, onT
 
   const tpl = templateById(state.templateId);
   const dur = state.duration;
-  const cut = tpl.category === 'transition';
+  const cut = isTransition(tpl);
 
   return (
     <div className="flex-1 min-w-0 flex flex-col h-full">

@@ -1,7 +1,14 @@
 // F1 2026 grid — palettes tuned for paper-cutout collage.
 // paper: main paper stock · paper2: secondary scrap · ink: text/ink · accent: highlight
 // accent2: secondary highlight · tape: masking/washi tape · car / car2: livery for the native car
+export const IDENTITY = {
+  id: 'lilas', name: 'Minha identidade · Lilás', short: 'LIL',
+  // sampled from the reference edits: lilac titles, lilac/linen gingham, crumpled graph paper
+  palette: { paper: '#ece6dc', paper2: '#8a74a8', ink: '#4b4358', accent: '#c0b4fc', accent2: '#ffffff', tape: '#dcd2fb', car: '#c0b4fc', car2: '#ffffff', linen: '#b5a79b' },
+};
+
 export const TEAMS = [
+  IDENTITY,
   { id: 'ferrari', name: 'Ferrari', short: 'FER', palette: { paper: '#f3ead8', paper2: '#d40000', ink: '#1a1410', accent: '#d40000', accent2: '#ffd400', tape: '#ffe066', car: '#d40000', car2: '#ffd400' } },
   { id: 'mclaren', name: 'McLaren', short: 'MCL', palette: { paper: '#f2ebdf', paper2: '#ff8000', ink: '#1d1d1f', accent: '#ff8000', accent2: '#47c7fc', tape: '#ffb366', car: '#ff8000', car2: '#1d1d1f' } },
   { id: 'mercedes', name: 'Mercedes', short: 'MER', palette: { paper: '#e4e2dc', paper2: '#9da3a6', ink: '#111111', accent: '#00a19c', accent2: '#c6c6c6', tape: '#bfe9e6', car: '#a7aeb3', car2: '#00d7b6' } },
@@ -16,3 +23,29 @@ export const TEAMS = [
 ];
 
 export const teamById = (id) => TEAMS.find((t) => t.id === id) || TEAMS[0];
+
+// Color helpers
+const hex = (h) => {
+  const m = h.replace('#', '');
+  const f = m.length === 3 ? m.split('').map((c) => c + c).join('') : m;
+  return [0, 2, 4].map((i) => parseInt(f.slice(i, i + 2), 16));
+};
+const toHex = (rgb) => '#' + rgb.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
+export const mix = (a, b, k) => {
+  const A = hex(a), B = hex(b);
+  return toHex(A.map((v, i) => v + (B[i] - v) * k));
+};
+export const rgba = (h, a) => {
+  const [r, g, b] = hex(h);
+  return `rgba(${r},${g},${b},${a})`;
+};
+
+// "Suavizar": pastelize the strong team colors toward a dreamy, lighter version
+export function soften(pal, k) {
+  const out = { linen: '#b5a79b', ...pal };
+  if (!k) return out;
+  ['accent', 'accent2', 'paper2', 'car', 'car2', 'tape'].forEach((key) => (out[key] = mix(out[key], '#ffffff', k * 0.75)));
+  out.ink = mix(out.ink, '#4b4358', k);
+  out.paper = mix(out.paper, '#f4efe8', k * 0.6);
+  return out;
+}

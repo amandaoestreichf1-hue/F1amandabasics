@@ -9,19 +9,21 @@ import { ensureBuiltinFonts, loadCustomFont } from './lib/fonts.js';
 import { buildNativeTrinkets } from './lib/nativeTrinkets.js';
 import { exportWebM, exportPNGZip, exportStillPNG, download, webmAlphaSupported } from './lib/exporter.js';
 
-const STORAGE_KEY = 'paddock-press-v1';
+const STORAGE_KEY = 'paddock-press-v2';
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 function initialState() {
   const base = {
-    templateId: 'newsWipe',
-    teamId: 'mclaren',
-    palette: { ...teamById('mclaren').palette },
-    fonts: { head: 'Anton', body: 'PlayfairItalic' },
-    motion: 'stop',
+    templateId: 'lilacTitle',
+    teamId: 'lilas',
+    palette: { ...teamById('lilas').palette },
+    soft: 0,
+    tear: 0.7,
+    fonts: { head: 'Hand', body: 'PlayfairItalic' },
+    motion: 'fluid',
     durations: Object.fromEntries(TEMPLATES.map((t) => [t.id, t.defaultDuration])),
     params: allDefaultParams(),
-    shadow: { on: true, size: 14, color: '#141210' },
+    shadow: { on: true, size: 8, blur: 14, opacity: 0.3, color: '#4b3a78' },
     trinkets: [],
     selectedTrinket: null,
     exportFps: 30,
@@ -39,7 +41,7 @@ function initialState() {
       return {
         ...base,
         ...saved,
-        fonts: { head: saved.fonts?.head?.startsWith('custom:') ? 'Anton' : saved.fonts?.head || 'Anton', body: saved.fonts?.body?.startsWith('custom:') ? 'PlayfairItalic' : saved.fonts?.body || 'PlayfairItalic' },
+        fonts: { head: saved.fonts?.head?.startsWith('custom:') ? 'Hand' : saved.fonts?.head || 'Hand', body: saved.fonts?.body?.startsWith('custom:') ? 'PlayfairItalic' : saved.fonts?.body || 'PlayfairItalic' },
         durations: { ...base.durations, ...(saved.durations || {}) },
         params,
         shadow: { ...base.shadow, ...(saved.shadow || {}) },
@@ -180,8 +182,10 @@ export default function App() {
           <TeamPanel
             teamId={state.teamId}
             palette={state.palette}
-            onTeam={(id) => setState({ teamId: id, palette: { ...teamById(id).palette } })}
+            onTeam={(id) => setState({ teamId: id, palette: { linen: '#b5a79b', ...teamById(id).palette }, soft: id === 'lilas' ? 0 : 0.35 })}
             onPalette={(p) => setState({ palette: p })}
+            soft={state.soft || 0}
+            onSoft={(v) => setState({ soft: v })}
           />
           <FieldsPanel tpl={tpl} P={state.params[tpl.id]} set={setParams} assets={assetsRef.current} onUpload={uploadImage} key={tpl.id + assetsVersion} />
           <div className="px-5 py-2 -mt-1 border-b border-desk-700/70">

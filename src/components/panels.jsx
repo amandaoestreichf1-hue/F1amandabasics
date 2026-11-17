@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Section, TextInput, Slider, Toggle, Select, ColorInput, Btn, FileButton, Segmented, Label } from './ui.jsx';
-import { TEMPLATES, CATEGORIES } from '../templates/index.js';
+import { TEMPLATES, CATEGORIES, isTransition } from '../templates/index.js';
 import { TEAMS } from '../lib/teams.js';
 import { allFonts } from '../lib/fonts.js';
 
@@ -49,9 +49,10 @@ const PAL_LABELS = [
   ['tape', 'Fita adesiva'],
   ['car', 'Carro (principal)'],
   ['car2', 'Carro (detalhe)'],
+  ['linen', 'Xadrez (linho)'],
 ];
 
-export function TeamPanel({ teamId, palette, onTeam, onPalette }) {
+export function TeamPanel({ teamId, palette, onTeam, onPalette, soft, onSoft }) {
   return (
     <Section title="Equipe · Grid 2026" kicker="02">
       <div className="grid grid-cols-2 gap-1.5">
@@ -62,7 +63,7 @@ export function TeamPanel({ teamId, palette, onTeam, onPalette }) {
               key={t.id}
               whileTap={{ scale: 0.95 }}
               onClick={() => onTeam(t.id)}
-              className={`flex items-center gap-2 px-2 py-1.5 rounded-sm border text-left ${active ? 'border-marker bg-desk-800' : 'border-desk-700 bg-desk-850 hover:border-desk-600'}`}
+              className={`flex items-center gap-2 px-2 py-1.5 rounded-sm border text-left ${t.id === 'lilas' ? 'col-span-2' : ''} ${active ? 'border-marker bg-desk-800' : 'border-desk-700 bg-desk-850 hover:border-desk-600'}`}
             >
               <span className="flex -space-x-1 shrink-0">
                 {[t.palette.accent, t.palette.paper2, t.palette.accent2].map((c, i) => (
@@ -74,10 +75,11 @@ export function TeamPanel({ teamId, palette, onTeam, onPalette }) {
           );
         })}
       </div>
+      <Slider label="Suavizar cores (tons delicados)" value={soft} min={0} max={1} step={0.05} fmt={(v) => Math.round(v * 100) + '%'} onChange={onSoft} />
       <div className="font-mono text-[11px] text-stone-500 pt-1">Cores livres (sobrescrevem a equipe):</div>
       <div className="grid grid-cols-2 gap-1.5">
         {PAL_LABELS.map(([k, l]) => (
-          <ColorInput key={k} label={l} value={palette[k]} onChange={(v) => onPalette({ ...palette, [k]: v })} />
+          <ColorInput key={k} label={l} value={palette[k] || '#b5a79b'} onChange={(v) => onPalette({ ...palette, [k]: v })} />
         ))}
       </div>
     </Section>
@@ -247,23 +249,33 @@ export function MotionPanel({ state, setState, tpl }) {
       <Slider
         label="Duração"
         value={state.duration}
-        min={tpl.category === 'transition' ? 0.4 : 1}
-        max={tpl.category === 'transition' ? 2.5 : 6}
+        min={isTransition(tpl) ? 0.4 : 1}
+        max={isTransition(tpl) ? 2.5 : 6}
         step={0.05}
         fmt={(v) => v.toFixed(2) + 's'}
         onChange={(v) => setState({ duration: v })}
       />
       <div className="flex gap-1.5">
-        {(tpl.category === 'transition' ? [0.6, 0.8, 1.0, 1.2] : [1.8, 2.4, 3, 4]).map((d) => (
+        {(isTransition(tpl) ? [0.6, 0.8, 1.0, 1.2] : [1.8, 2.4, 3, 4]).map((d) => (
           <Btn key={d} className="flex-1 !py-1 font-mono" onClick={() => setState({ duration: d })}>{d}s</Btn>
         ))}
       </div>
-      <Toggle label="Sombra seca (hard shadow)" value={state.shadow.on} onChange={(v) => setState({ shadow: { ...state.shadow, on: v } })} />
+      <Slider label="Papel rasgado (intensidade)" value={state.tear ?? 1} min={0} max={1.6} step={0.05} fmt={(v) => Math.round(v * 100) + '%'} onChange={(v) => setState({ tear: v })} />
+      <Toggle label="Sombra" value={state.shadow.on} onChange={(v) => setState({ shadow: { ...state.shadow, on: v } })} />
       {state.shadow.on && (
-        <div className="grid grid-cols-2 gap-2 items-end">
-          <Slider label="Deslocamento" value={state.shadow.size} min={4} max={30} step={1} fmt={(v) => v + 'px'} onChange={(v) => setState({ shadow: { ...state.shadow, size: v } })} />
-          <ColorInput label="Cor da sombra" value={state.shadow.color} onChange={(v) => setState({ shadow: { ...state.shadow, color: v } })} />
-        </div>
+        <>
+          <Segmented
+            value={state.shadow.blur > 0 ? 'soft' : 'hard'}
+            onChange={(v) => setState({ shadow: v === 'soft' ? { ...state.shadow, blur: 14, size: 8, opacity: 0.3, color: '#4b3a78' } : { ...state.shadow, blur: 0, size: 14, opacity: 0.9, color: '#141210' } })}
+            options={[['soft', 'Suave (esfumada)'], ['hard', 'Seca (recorte)']]}
+          />
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1 items-end">
+            <Slider label="Deslocamento" value={state.shadow.size} min={0} max={30} step={1} fmt={(v) => v + 'px'} onChange={(v) => setState({ shadow: { ...state.shadow, size: v } })} />
+            <Slider label="Desfoque" value={state.shadow.blur || 0} min={0} max={40} step={1} fmt={(v) => v + 'px'} onChange={(v) => setState({ shadow: { ...state.shadow, blur: v } })} />
+            <Slider label="Opacidade" value={state.shadow.opacity ?? 0.85} min={0.05} max={1} step={0.05} fmt={(v) => Math.round(v * 100) + '%'} onChange={(v) => setState({ shadow: { ...state.shadow, opacity: v } })} />
+            <ColorInput label="Cor da sombra" value={state.shadow.color} onChange={(v) => setState({ shadow: { ...state.shadow, color: v } })} />
+          </div>
+        </>
       )}
     </Section>
   );
